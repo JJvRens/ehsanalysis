@@ -318,19 +318,37 @@ function renderTable(){
     <th>%</th><th>Lvl</th></tr>`;
   document.getElementById('mark-tbody').innerHTML=students.map((s,si)=>{
     const tot=getTotal(s.marks),pct=getPct(s.marks),lv=getLevel(pct),ab=isAbsent(s.marks);
-    return`<tr class="${ab?'absent':''}">
+    return`<tr id="row-${si}" class="${ab?'absent':''}">
       <td style="color:var(--ink3);font-family:var(--mono);font-size:10px">${si+1}</td>
       <td class="nc"><input class="ni" value="${s.name}" oninput="students[${si}].name=this.value"/></td>
-      ${questions.map((q,qi)=>`<td><input class="mi" type="number" min="0" max="${q.max}" value="${s.marks[qi]??0}" oninput="updateMark(${si},${qi},this.value)"/></td>`).join('')}
-      <td class="tc" style="background:${ab?'':'#fffff0'}">${ab?'—':tot}</td>
-      <td class="pc" style="background:${ab?'':'#fffff0'};color:${ab?'inherit':'#1a4d25'};font-weight:600">${ab?'—':pct+'%'}</td>
-      <td><span class="lb ${lv.cls}">${ab?'ABS':lv.label}</span></td></tr>`;
+      ${questions.map((q,qi)=>`<td><input class="mi" type="number" min="0" max="${q.max}" value="${s.marks[qi]??0}" onchange="updateMark(${si},${qi},this.value)" onkeydown="if(event.key==='Tab'||event.key==='Enter'){this.blur()}"/></td>`).join('')}
+      <td id="tot-${si}" class="tc" style="background:${ab?'':'#fffff0'}">${ab?'—':tot}</td>
+      <td id="pct-${si}" class="pc" style="background:${ab?'':'#fffff0'};color:${ab?'inherit':'#1a4d25'};font-weight:600">${ab?'—':pct+'%'}</td>
+      <td id="lvl-${si}"><span class="lb ${lv.cls}">${ab?'ABS':lv.label}</span></td></tr>`;
   }).join('');
 }
+
+// Update only the affected row's summary cells — no full re-render so focus is never lost
 function updateMark(si,qi,val){
-  let v=Number(val)||0;if(v>questions[qi].max)v=questions[qi].max;
-  students[si].marks[qi]=v;renderTable();
+  let v=Number(val)||0;
+  if(v>questions[qi].max)v=questions[qi].max;
+  // Clamp input visually too
+  const inputs=document.querySelectorAll(`#row-${si} input.mi`);
+  if(inputs[qi])inputs[qi].value=v;
+  students[si].marks[qi]=v;
+  // Recalc just this row
+  const marks=students[si].marks;
+  const tot=getTotal(marks),pct=getPct(marks),lv=getLevel(pct),ab=isAbsent(marks);
+  const totEl=document.getElementById(`tot-${si}`);
+  const pctEl=document.getElementById(`pct-${si}`);
+  const lvlEl=document.getElementById(`lvl-${si}`);
+  const rowEl=document.getElementById(`row-${si}`);
+  if(totEl)totEl.textContent=ab?'—':tot;
+  if(pctEl){pctEl.textContent=ab?'—':pct+'%';pctEl.style.color=ab?'inherit':'#1a4d25';}
+  if(lvlEl)lvlEl.innerHTML=`<span class="lb ${lv.cls}">${ab?'ABS':lv.label}</span>`;
+  if(rowEl)rowEl.className=ab?'absent':'';
 }
+
 function addStudent(){students.push({name:'',marks:questions.map(()=>0)});renderTable();}
 
 // ── ITEM ANALYSIS ──────────────────────────────────────────────────────────
