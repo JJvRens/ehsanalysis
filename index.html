@@ -879,8 +879,362 @@ function clearAllStudents(){
   document.getElementById('import-status').textContent='';
 }
 
-// ── INIT ───────────────────────────────────────────────────────────────────
+// ── SUPABASE ────────────────────────────────────────────────────────────────
+const SUPA_URL='https://qcghljfqdonbbgimhqfe.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZ2hsamZxZG9uYmJnaW1ocWZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1ODA3ODAsImV4cCI6MjA5NDE1Njc4MH0.QlL1HwWAXad262DgPoLle-p23tG5TFR32tbenXqNnbI';
+let sbClient=null;
+let currentUser=null;
+let currentProfile=null;
+let currentAnalysisId=null;
+
+async function supaFetch(path,opts={}){
+  const res=await fetch(SUPA_URL+path,{
+    ...opts,
+    headers:{
+      'apikey':SUPA_KEY,
+      'Authorization':'Bearer '+(currentUser?.access_token||SUPA_KEY),
+      'Content-Type':'application/json',
+      'Prefer':'return=representation',
+      ...(opts.headers||{})
+    }
+  });
+  const text=await res.text();
+  try{return{ok:res.ok,status:res.status,data:text?JSON.parse(text):null};}
+  catch{return{ok:res.ok,status:res.status,data:text};}
+}
+
+async function supaAuth(email,password,isSignup=false){
+  const path=isSignup?'/auth/v1/signup':'/auth/v1/token?grant_type=password';
+  const res=await fetch(SUPA_URL+path,{
+    method:'POST',
+    headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},
+    body:JSON.stringify({email,password})
+  });
+  return await res.json();
+}
+
+async function supaSignOut(){
+  await fetch(SUPA_URL+'/auth/v1/logout',{
+    method:'POST',
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+currentUser.access_token}
+  });
+  currentUser=null;currentProfile=null;currentAnalysisId=null;
+  showAuthScreen();
+}
+
+// ── AUTH SCREEN ─────────────────────────────────────────────────────────────
+function showAuthScreen(){
+  document.getElementById('app-shell').style.display='none';
+  document.getElementById('auth-screen').style.display='flex';
+  document.getElementById('auth-error').textContent='';
+}
+
+function showAppShell(){
+  document.getElementById('auth-screen').style.display='none';
+  document.getElementById('app-shell').style.display='block';
+  document.getElementById('user-name-display').textContent=currentProfile?.full_name||currentUser?.email||'Teacher';
+  if(currentProfile?.is_admin){
+    document.getElementById('tab-admin').style.display='flex';
+  }
+  updateMeta();renderQConfig();
+  loadMyAnalyses();
+}
+
+async function handleLogin(){
+  const email=document.getElementById('auth-email').value.trim();
+  const password=document.getElementById('auth-password').value;
+  const btn=document.getElementById('auth-btn');
+  const err=document.getElementById('auth-error');
+  const isSignup=document.getElementById('auth-mode').dataset.mode==='signup';
+  if(!email||!password){err.textContent='Please enter email and password.';return;}
+  btn.textContent='Please wait...';btn.disabled=true;err.textContent='';
+  const data=await supaAuth(email,password,isSignup);
+  if(data.error||data.msg){
+    err.textContent=data.error_description||data.msg||data.error||'Something went wrong.';
+    btn.textContent=isSignup?'Create account':'Log in';btn.disabled=false;return;
+  }
+  currentUser={access_token:data.access_token,id:data.user?.id||data.id};
+  // Load or create profile
+  const prof=await supaFetch(`/rest/v1/profiles?id=eq.${currentUser.id}&select=*`);
+  if(prof.ok&&prof.data&&prof.data.length>0){
+    currentProfile=prof.data[0];
+    // Pre-fill meta fields from profile
+    if(currentProfile.full_name)document.getElementById('f-educator').value=currentProfile.full_name;
+    if(currentProfile.subject)document.getElementById('f-subject').value=currentProfile.subject;
+    if(currentProfile.grade)document.getElementById('f-grade').value=currentProfile.grade;
+    if(currentProfile.school)document.getElementById('f-school').value=currentProfile.school;
+  } else if(isSignup){
+    // Create profile on first signup
+    await supaFetch('/rest/v1/profiles',{
+      method:'POST',
+      body:JSON.stringify({id:currentUser.id,full_name:'',subject:'',grade:'',school:'Evander High School',is_admin:false})
+    });
+    currentProfile={id:currentUser.id,full_name:'',subject:'',grade:'',school:'Evander High School',is_admin:false};
+  }
+  showAppShell();
+}
+
+// ── SAVE / LOAD ANALYSES ────────────────────────────────────────────────────
+async function saveAnalysis(){
+  const m=getMeta();
+  const btn=document.getElementById('save-btn');
+  btn.textContent='Saving...';btn.disabled=true;
+  const payload={
+    teacher_id:currentUser.id,
+    task:m.task,date:m.date,circuit:m.circuit,
+    stream:m.stream,target:m.target,
+    questions:JSON.stringify(questions),
+    students:JSON.stringify(students),
+    updated_at:new Date().toISOString()
+  };
+  let res;
+  if(currentAnalysisId){
+    res=await supaFetch(`/rest/v1/analyses?id=eq.${currentAnalysisId}`,{method:'PATCH',body:JSON.stringify(payload)});
+  } else {
+    res=await supaFetch('/rest/v1/analyses',{method:'POST',body:JSON.stringify(payload)});
+    if(res.ok&&res.data&&res.data[0])currentAnalysisId=res.data[0].id;
+  }
+  // Update profile with latest subject/grade
+  await supaFetch(`/rest/v1/profiles?id=eq.${currentUser.id}`,{
+    method:'PATCH',
+    body:JSON.stringify({full_name:m.educator,subject:m.subject,grade:m.grade,school:m.school})
+  });
+  btn.textContent=res.ok?'✓ Saved':'Save failed';
+  btn.disabled=false;
+  setTimeout(()=>{btn.textContent='💾 Save';},2000);
+  loadMyAnalyses();
+}
+
+async function loadMyAnalyses(){
+  const res=await supaFetch(`/rest/v1/analyses?teacher_id=eq.${currentUser.id}&select=*&order=updated_at.desc`);
+  const list=document.getElementById('analyses-list');
+  if(!res.ok||!res.data||res.data.length===0){
+    list.innerHTML='<div style="color:var(--ink3);font-size:12px;padding:8px 0">No saved analyses yet. Fill in marks and click Save.</div>';
+    return;
+  }
+  list.innerHTML=res.data.map(a=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
+      <div style="flex:1;font-size:12px">
+        <span style="font-weight:600">${a.task||'Untitled'}</span>
+        <span style="color:var(--ink3);margin-left:6px">${a.date||''}</span>
+      </div>
+      <button onclick="loadAnalysis('${a.id}')" style="padding:3px 10px;font-size:11px;background:var(--green-pale);border:1px solid var(--green-light);color:var(--green-dark);border-radius:3px;cursor:pointer;font-family:var(--sans)">Load</button>
+      <button onclick="deleteAnalysis('${a.id}')" style="padding:3px 8px;font-size:11px;background:none;border:1px solid #e8b4b4;color:var(--red);border-radius:3px;cursor:pointer;font-family:var(--sans)">✕</button>
+    </div>`).join('');
+}
+
+async function loadAnalysis(id){
+  const res=await supaFetch(`/rest/v1/analyses?id=eq.${id}&select=*`);
+  if(!res.ok||!res.data||res.data.length===0)return;
+  const a=res.data[0];
+  currentAnalysisId=id;
+  // Restore state
+  try{questions=JSON.parse(a.questions);}catch{}
+  try{students=JSON.parse(a.students);}catch{}
+  // Restore meta fields
+  if(a.task)document.getElementById('f-task').value=a.task;
+  if(a.date)document.getElementById('f-date').value=a.date;
+  if(a.circuit)document.getElementById('f-circuit').value=a.circuit;
+  if(a.stream)document.getElementById('f-stream').value=a.stream;
+  if(a.target)document.getElementById('f-target').value=a.target;
+  updateMeta();renderQConfig();
+  showPage('entry');
+  document.getElementById('save-btn').textContent='💾 Save';
+  // Close drawer
+  toggleDrawer(false);
+}
+
+async function deleteAnalysis(id){
+  if(!confirm('Delete this analysis?'))return;
+  await supaFetch(`/rest/v1/analyses?id=eq.${id}`,{method:'DELETE'});
+  if(currentAnalysisId===id){currentAnalysisId=null;}
+  loadMyAnalyses();
+}
+
+function newAnalysis(){
+  if(!confirm('Start a new analysis? Unsaved changes will be lost.'))return;
+  currentAnalysisId=null;
+  questions=[
+    {label:"Q1",topic:"Multiple choice",max:5},{label:"Q2",topic:"Matching items",max:3},
+    {label:"Q3",topic:"True/False items",max:2},{label:"Q4",topic:"System Technologies",max:10},
+    {label:"Q5",topic:"Social Implications",max:10},{label:"Q6",topic:"Solution Development",max:5},
+    {label:"Q7",topic:"Integrated Scenario",max:15},
+  ];
+  students=[];
+  document.getElementById('f-task').value='';
+  document.getElementById('f-date').value='';
+  updateMeta();renderQConfig();
+  showPage('entry');
+  toggleDrawer(false);
+}
+
+// ── ADMIN VIEW ──────────────────────────────────────────────────────────────
+async function renderAdmin(){
+  const container=document.getElementById('admin-content');
+  container.innerHTML='<div style="color:var(--ink3);font-size:13px">Loading all teachers...</div>';
+  const res=await supaFetch('/rest/v1/analyses?select=*,profiles(full_name,subject,grade)&order=updated_at.desc');
+  if(!res.ok||!res.data){container.innerHTML='<div style="color:var(--red)">Could not load data.</div>';return;}
+  if(res.data.length===0){container.innerHTML='<div style="color:var(--ink3);font-size:13px">No analyses submitted yet.</div>';return;}
+
+  // Group by teacher
+  const byTeacher={};
+  res.data.forEach(a=>{
+    const name=a.profiles?.full_name||'Unknown';
+    if(!byTeacher[name])byTeacher[name]=[];
+    byTeacher[name].push(a);
+  });
+
+  container.innerHTML=Object.entries(byTeacher).map(([name,analyses])=>`
+    <div style="background:white;border:1px solid var(--border);border-radius:4px;margin-bottom:1rem;overflow:hidden">
+      <div style="background:var(--green-dark);color:white;padding:10px 14px;font-size:13px;font-weight:600">${name}</div>
+      ${analyses.map(a=>{
+        let qs=[],ss=[];
+        try{qs=JSON.parse(a.questions);}catch{}
+        try{ss=JSON.parse(a.students);}catch{}
+        const written=ss.filter(s=>s.name&&!s.marks.every(m=>(Number(m)||0)===0));
+        const mx=qs.reduce((t,q)=>t+Number(q.max),0);
+        const avg=written.length?Math.round(written.reduce((t,s)=>t+Math.round(s.marks.reduce((a,v)=>a+(Number(v)||0),0)/mx*100),0)/written.length):0;
+        return`<div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:12px">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+            <span><strong>${a.task||'Untitled'}</strong></span>
+            <span style="color:var(--ink3)">${a.date||''}</span>
+            <span style="color:var(--ink3)">${a.profiles?.subject||''} Gr ${a.profiles?.grade||''}</span>
+            <span style="background:var(--green-pale);color:var(--green-dark);padding:2px 8px;border-radius:3px;font-weight:600">${written.length} learners · avg ${avg}%</span>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`).join('');
+}
+
+// ── DRAWER (saved analyses panel) ───────────────────────────────────────────
+function toggleDrawer(force){
+  const d=document.getElementById('drawer');
+  const open=force!==undefined?force:d.style.display==='none'||!d.style.display;
+  d.style.display=open?'block':'none';
+  if(open)loadMyAnalyses();
+}
+
+// ── INIT ────────────────────────────────────────────────────────────────────
 updateMeta();renderQConfig();
+// Show auth screen on load
+document.addEventListener('DOMContentLoaded',()=>{
+  showAuthScreen();
+});
+</script>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen" style="display:none;position:fixed;inset:0;background:var(--green-dark);z-index:999;align-items:center;justify-content:center;flex-direction:column">
+  <div style="background:white;border-radius:8px;padding:2rem;width:100%;max-width:380px;margin:1rem">
+    <div style="text-align:center;margin-bottom:1.5rem">
+      <img src="wapen.jpeg" style="width:60px;height:60px;object-fit:contain;margin-bottom:8px" onerror="this.style.display='none'"/>
+      <div style="font-size:18px;font-weight:700;color:var(--green-dark)">Evander High School</div>
+      <div style="font-size:12px;color:var(--ink3);margin-top:2px">Learner Performance Tool</div>
+    </div>
+    <div id="auth-mode" data-mode="login">
+      <div style="margin-bottom:10px">
+        <label style="font-size:11px;font-weight:600;color:var(--ink3);letter-spacing:0.07em;text-transform:uppercase;display:block;margin-bottom:3px">Email</label>
+        <input id="auth-email" type="email" placeholder="your@email.com" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:4px;font-size:13px;font-family:var(--sans);outline:none"/>
+      </div>
+      <div style="margin-bottom:6px">
+        <label style="font-size:11px;font-weight:600;color:var(--ink3);letter-spacing:0.07em;text-transform:uppercase;display:block;margin-bottom:3px">Password</label>
+        <input id="auth-password" type="password" placeholder="••••••••" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:4px;font-size:13px;font-family:var(--sans);outline:none" onkeydown="if(event.key==='Enter')handleLogin()"/>
+      </div>
+      <div id="auth-error" style="color:var(--red);font-size:12px;min-height:18px;margin-bottom:8px"></div>
+      <button id="auth-btn" onclick="handleLogin()" style="width:100%;padding:10px;background:var(--green-dark);color:white;border:none;border-radius:4px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans)">Log in</button>
+      <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--ink3)">
+        <span id="auth-toggle-text">Don't have an account?</span>
+        <button onclick="toggleAuthMode()" style="background:none;border:none;color:var(--green-mid);cursor:pointer;font-size:12px;font-family:var(--sans);font-weight:600;margin-left:4px" id="auth-toggle-btn">Sign up</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- APP SHELL (wraps the whole existing app) -->
+<div id="app-shell" style="display:none">
+  <!-- SAVE BAR -->
+  <div style="background:var(--paper2);border-bottom:1px solid var(--border);padding:6px 1.5rem;display:flex;align-items:center;gap:10px;flex-wrap:wrap" class="no-print">
+    <span style="font-size:12px;color:var(--ink3)">Logged in as <strong id="user-name-display"></strong></span>
+    <button id="save-btn" onclick="saveAnalysis()" style="padding:5px 14px;background:var(--green-dark);color:white;border:none;border-radius:3px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans)">💾 Save</button>
+    <button onclick="toggleDrawer()" style="padding:5px 14px;background:white;color:var(--green-dark);border:1px solid var(--green-light);border-radius:3px;font-size:12px;cursor:pointer;font-family:var(--sans)">📂 My analyses</button>
+    <button onclick="newAnalysis()" style="padding:5px 14px;background:white;color:var(--ink2);border:1px solid var(--border);border-radius:3px;font-size:12px;cursor:pointer;font-family:var(--sans)">+ New</button>
+    <button onclick="supaSignOut()" style="margin-left:auto;padding:5px 12px;background:none;color:var(--ink3);border:1px solid var(--border);border-radius:3px;font-size:11px;cursor:pointer;font-family:var(--sans)">Sign out</button>
+  </div>
+
+  <!-- SAVED ANALYSES DRAWER -->
+  <div id="drawer" style="display:none;position:fixed;top:0;right:0;width:320px;height:100vh;background:white;border-left:1px solid var(--border);z-index:200;padding:1rem;overflow-y:auto;box-shadow:-4px 0 20px rgba(0,0,0,0.1)" class="no-print">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+      <div style="font-size:13px;font-weight:600">My saved analyses</div>
+      <button onclick="toggleDrawer(false)" style="background:none;border:none;font-size:18px;cursor:pointer;color:var(--ink3)">✕</button>
+    </div>
+    <div id="analyses-list"></div>
+  </div>
+
+  <!-- EXISTING TOPBAR + PAGES GO HERE (moved inside app-shell via JS) -->
+  <div id="main-content"></div>
+</div>
+
+<script>
+// Move existing app content into app-shell on load
+document.addEventListener('DOMContentLoaded',()=>{
+  const shell=document.getElementById('main-content');
+  const topbar=document.querySelector('.topbar');
+  const pages=document.querySelectorAll('.page');
+  if(topbar)shell.appendChild(topbar);
+  pages.forEach(p=>shell.appendChild(p));
+
+  // Add admin tab to topbar
+  const navTabs=document.querySelector('.nav-tabs');
+  if(navTabs){
+    const adminTab=document.createElement('button');
+    adminTab.className='nav-tab';
+    adminTab.id='tab-admin';
+    adminTab.style.display='none';
+    adminTab.textContent='Admin View';
+    adminTab.onclick=()=>showPage('admin');
+    navTabs.appendChild(adminTab);
+  }
+
+  // Add admin page
+  const adminPage=document.createElement('div');
+  adminPage.className='page';
+  adminPage.id='page-admin';
+  adminPage.innerHTML='<div style="font-size:18px;font-weight:600;margin-bottom:1rem;color:var(--green-dark)">All Teachers — Read Only View</div><div id="admin-content"></div>';
+  shell.appendChild(adminPage);
+
+  showAuthScreen();
+});
+
+function toggleAuthMode(){
+  const mode=document.getElementById('auth-mode');
+  const btn=document.getElementById('auth-btn');
+  const toggleBtn=document.getElementById('auth-toggle-btn');
+  const toggleText=document.getElementById('auth-toggle-text');
+  if(mode.dataset.mode==='login'){
+    mode.dataset.mode='signup';
+    btn.textContent='Create account';
+    toggleBtn.textContent='Log in';
+    toggleText.textContent='Already have an account?';
+  } else {
+    mode.dataset.mode='login';
+    btn.textContent='Log in';
+    toggleBtn.textContent='Sign up';
+    toggleText.textContent="Don't have an account?";
+  }
+}
+
+// Override showPage to handle admin
+const _origShowPage=showPage;
+window.showPage=function(id){
+  if(id==='admin'){
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+    document.getElementById('page-admin').classList.add('active');
+    document.getElementById('tab-admin').classList.add('active');
+    renderAdmin();
+    return;
+  }
+  _origShowPage(id);
+};
 </script>
 </body>
 </html>
