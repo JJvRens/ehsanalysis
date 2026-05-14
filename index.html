@@ -881,18 +881,19 @@ function clearAllStudents(){
 
 // ── SUPABASE ────────────────────────────────────────────────────────────────
 const SUPA_URL='https://qcghljfqdonbbgimhqfe.supabase.co';
-const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZ2hsamZxZG9uYmJnaW1ocWZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1ODA3ODAsImV4cCI6MjA5NDE1Njc4MH0.QlL1HwWAXad262DgPoLle-p23tG5TFR32tbenXqNnbI';
-let sbClient=null;
+const SUPA_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFjZ2hsamZxZG9uYmJnaW1ocWZlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg1ODA3ODAsImV4cCI6MjA5NDE1Njc4MH0.QlL1HwWAXad262DgPoLle-p23tG5TFR32tbenXqNnbI';
 let currentUser=null;
 let currentProfile=null;
 let currentAnalysisId=null;
+let accessToken=null;
 
 async function supaFetch(path,opts={}){
+  const token=accessToken||SUPA_ANON;
   const res=await fetch(SUPA_URL+path,{
     ...opts,
     headers:{
-      'apikey':SUPA_KEY,
-      'Authorization':'Bearer '+(currentUser?.access_token||SUPA_KEY),
+      'apikey':SUPA_ANON,
+      'Authorization':'Bearer '+token,
       'Content-Type':'application/json',
       'Prefer':'return=representation',
       ...(opts.headers||{})
@@ -907,7 +908,7 @@ async function supaAuth(email,password,isSignup=false){
   const path=isSignup?'/auth/v1/signup':'/auth/v1/token?grant_type=password';
   const res=await fetch(SUPA_URL+path,{
     method:'POST',
-    headers:{'apikey':SUPA_KEY,'Content-Type':'application/json'},
+    headers:{'apikey':SUPA_ANON,'Content-Type':'application/json'},
     body:JSON.stringify({email,password})
   });
   return await res.json();
@@ -916,7 +917,7 @@ async function supaAuth(email,password,isSignup=false){
 async function supaSignOut(){
   await fetch(SUPA_URL+'/auth/v1/logout',{
     method:'POST',
-    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+currentUser.access_token}
+    headers:{'apikey':SUPA_ANON,'Authorization':'Bearer '+(accessToken||SUPA_ANON)}
   });
   currentUser=null;currentProfile=null;currentAnalysisId=null;
   showAuthScreen();
@@ -953,7 +954,8 @@ async function handleLogin(){
     err.textContent=data.error_description||data.msg||data.error||'Something went wrong.';
     btn.textContent=isSignup?'Create account':'Log in';btn.disabled=false;return;
   }
-  currentUser={access_token:data.access_token,id:data.user?.id||data.id};
+  currentUser={id:data.user?.id||data.id,email:data.user?.email};
+  accessToken=data.access_token||data.token||null;
   // Load or create profile
   const prof=await supaFetch(`/rest/v1/profiles?id=eq.${currentUser.id}&select=*`);
   if(prof.ok&&prof.data&&prof.data.length>0){
@@ -963,7 +965,7 @@ async function handleLogin(){
     if(currentProfile.subject)document.getElementById('f-subject').value=currentProfile.subject;
     if(currentProfile.grade)document.getElementById('f-grade').value=currentProfile.grade;
     if(currentProfile.school)document.getElementById('f-school').value=currentProfile.school;
-  } else if(isSignup){
+  } else {
     // Create profile on first signup
     await supaFetch('/rest/v1/profiles',{
       method:'POST',
