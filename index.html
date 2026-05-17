@@ -320,7 +320,7 @@ function renderTable(){
     const tot=getTotal(s.marks),pct=getPct(s.marks),lv=getLevel(pct),ab=isAbsent(s.marks);
     return`<tr id="row-${si}" class="${ab?'absent':''}">
       <td style="color:var(--ink3);font-family:var(--mono);font-size:10px">${si+1}</td>
-      <td class="nc"><input class="ni" value="${s.name}" oninput="students[${si}].name=this.value"/></td>
+      <td class="nc"><input class="ni" value="${s.name}" oninput="students[${si}].name=this.value;window._spipRendered=false;window._fnRendered=false;"/></td>
       ${questions.map((q,qi)=>`<td><input class="mi" type="number" min="0" max="${q.max}" value="${s.marks[qi]??0}" onchange="updateMark(${si},${qi},this.value)" onkeydown="if(event.key==='Tab'||event.key==='Enter'){this.blur()}"/></td>`).join('')}
       <td id="tot-${si}" class="tc" style="background:${ab?'':'#fffff0'}">${ab?'—':tot}</td>
       <td id="pct-${si}" class="pc" style="background:${ab?'':'#fffff0'};color:${ab?'inherit':'#1a4d25'};font-weight:600">${ab?'—':pct+'%'}</td>
@@ -330,6 +330,8 @@ function renderTable(){
 
 // Update only the affected row's summary cells — no full re-render so focus is never lost
 function updateMark(si,qi,val){
+  window._spipRendered=false;
+  window._fnRendered=false;
   let v=Number(val)||0;
   if(v>questions[qi].max)v=questions[qi].max;
   // Clamp input visually too
@@ -769,8 +771,8 @@ function showPage(id){
   document.getElementById(`page-${id}`).classList.add('active');
   document.getElementById(`tab-${id}`).classList.add('active');
   if(id==='summary')renderSummary();
-  if(id==='spip')renderSpip();
-  if(id==='fortnightly')renderFortnightly();
+  if(id==='spip'){if(!window._spipRendered){renderSpip();window._spipRendered=true;}}
+  if(id==='fortnightly'){if(!window._fnRendered){renderFortnightly();window._fnRendered=true;}}
 }
 function printPage(){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('pt'));
