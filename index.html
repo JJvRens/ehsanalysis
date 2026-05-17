@@ -625,6 +625,8 @@ function renderSpip(){
     </table>
   </div>`;
   document.getElementById('tab-spip').classList.add('has-data');
+  // Restore any previously typed SPIP values
+  setTimeout(restoreSpipValues,100);
 }
 
 // Store spip row data by index so onclick doesn't need string escaping
@@ -1075,7 +1077,12 @@ async function loadAnalysis(id){
   // Restore state
   try{questions=JSON.parse(a.questions);}catch{}
   try{students=JSON.parse(a.students);}catch{}
-  try{window._spipValues=JSON.parse(a.spip_data||'{}');window._spipRendered=false;}catch{}
+  // Store spip data and force re-render with restore
+  try{
+    window._spipValues=JSON.parse(a.spip_data||'{}');
+  }catch{window._spipValues={};}
+  window._spipRendered=false;
+  window._fnRendered=false;
   // Restore meta fields
   if(a.task)document.getElementById('f-task').value=a.task;
   if(a.date)document.getElementById('f-date').value=a.date;
@@ -1476,7 +1483,9 @@ window.showPage=function(id){
   _origShowPage(id);
   // Restore SPIP values after switching back to SPIP
   if(id==='spip'){
-    setTimeout(restoreSpipValues,50);
+    setTimeout(()=>{
+      restoreSpipValues();
+    },100);
   }
 };
 </script>
