@@ -1102,38 +1102,202 @@ function newAnalysis(){
 async function renderAdmin(){
   const container=document.getElementById('admin-content');
   container.innerHTML='<div style="color:var(--ink3);font-size:13px">Loading all teachers...</div>';
-  const res=await supaFetch('/rest/v1/analyses?select=*,profiles(full_name,subject,grade)&order=updated_at.desc');
+  const res=await supaFetch('/rest/v1/analyses?select=*,profiles(full_name,subject,grade,school,email)&order=updated_at.desc');
   if(!res.ok||!res.data){container.innerHTML='<div style="color:var(--red)">Could not load data.</div>';return;}
   if(res.data.length===0){container.innerHTML='<div style="color:var(--ink3);font-size:13px">No analyses submitted yet.</div>';return;}
 
-  // Group by teacher
+  // Store analyses globally for detail view
+  window._adminAnalyses=res.data;
+
+  // Group by teacher_id
   const byTeacher={};
   res.data.forEach(a=>{
-    const name=a.profiles?.full_name||'Unknown';
-    if(!byTeacher[name])byTeacher[name]=[];
-    byTeacher[name].push(a);
+    const key=a.teacher_id;
+    if(!byTeacher[key])byTeacher[key]={name:a.profiles?.full_name||a.profiles?.email||'Unknown Teacher',analyses:[]};
+    byTeacher[key].analyses.push(a);
   });
 
-  container.innerHTML=Object.entries(byTeacher).map(([name,analyses])=>`
+  container.innerHTML=Object.entries(byTeacher).map(([tid,teacher])=>`
     <div style="background:white;border:1px solid var(--border);border-radius:4px;margin-bottom:1rem;overflow:hidden">
-      <div style="background:var(--green-dark);color:white;padding:10px 14px;font-size:13px;font-weight:600">${name}</div>
-      ${analyses.map(a=>{
+      <div style="background:var(--green-dark);color:white;padding:10px 14px;font-size:13px;font-weight:600;display:flex;justify-content:space-between;align-items:center">
+        <span>${teacher.name}</span>
+        <span style="font-size:11px;opacity:0.7;font-weight:400">${teacher.analyses.length} analysis${teacher.analyses.length!==1?'es':''}</span>
+      </div>
+      ${teacher.analyses.map(a=>{
         let qs=[],ss=[];
         try{qs=JSON.parse(a.questions);}catch{}
         try{ss=JSON.parse(a.students);}catch{}
         const written=ss.filter(s=>s.name&&!s.marks.every(m=>(Number(m)||0)===0));
         const mx=qs.reduce((t,q)=>t+Number(q.max),0);
-        const avg=written.length?Math.round(written.reduce((t,s)=>t+Math.round(s.marks.reduce((a,v)=>a+(Number(v)||0),0)/mx*100),0)/written.length):0;
-        return`<div style="padding:10px 14px;border-bottom:1px solid var(--border);font-size:12px">
-          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
-            <span><strong>${a.task||'Untitled'}</strong></span>
-            <span style="color:var(--ink3)">${a.date||''}</span>
-            <span style="color:var(--ink3)">${a.profiles?.subject||''} Gr ${a.profiles?.grade||''}</span>
-            <span style="background:var(--green-pale);color:var(--green-dark);padding:2px 8px;border-radius:3px;font-weight:600">${written.length} learners · avg ${avg}%</span>
+        const avg=written.length?Math.round(written.reduce((t,s)=>{
+          const tot=s.marks.reduce((a,v)=>a+(Number(v)||0),0);
+          return t+(mx?Math.round(tot/mx*100):0);
+        },0)/written.length):0;
+        const passing=written.filter(s=>{
+          const tot=s.marks.reduce((a,v)=>a+(Number(v)||0),0);
+          return mx&&Math.round(tot/mx*100)>=50;
+        }).length;
+        return`<div onclick="showAdminDetail('${a.id}')" style="padding:12px 14px;border-bottom:1px solid var(--border);font-size:12px;cursor:pointer;transition:background 0.1s" onmouseover="this.style.background='var(--green-pale)'" onmouseout="this.style.background='white'">
+          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between">
+            <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+              <span style="font-weight:600;font-size:13px">${a.task||'Untitled'}</span>
+              <span style="color:var(--ink3)">${a.date||''}</span>
+              <span style="color:var(--ink3)">${a.profiles?.subject||''} Gr ${a.profiles?.grade||''}</span>
+            </div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <span style="background:var(--green-pale);color:var(--green-dark);padding:2px 8px;border-radius:3px;font-weight:600">${written.length} learners · avg ${avg}%</span>
+              <span style="background:${passing/written.length>=0.5?'#e4f2e7':'#fdf0f0'};color:${passing/written.length>=0.5?'var(--green-dark)':'var(--red)'};padding:2px 8px;border-radius:3px;font-size:11px">${passing} passing</span>
+              <span style="color:var(--ink3);font-size:11px">View →</span>
+            </div>
           </div>
         </div>`;
       }).join('')}
     </div>`).join('');
+}
+
+function showAdminDetail(analysisId){
+  const a=window._adminAnalyses?.find(x=>x.id===analysisId);
+  if(!a)return;
+  let qs=[],ss=[];
+  try{qs=JSON.parse(a.questions);}catch{}
+  try{ss=JSON.parse(a.students);}catch{}
+
+  const teacherName=a.profiles?.full_name||'Unknown Teacher';
+  const mx=qs.reduce((t,q)=>t+Number(q.max),0);
+
+  function getPctA(marks){return mx?Math.round(marks.reduce((a,v)=>a+(Number(v)||0),0)/mx*100):0;}
+  function getLevelA(p){
+    if(p<30)return{l:1,cls:'l1',label:'L1'};if(p<40)return{l:2,cls:'l2',label:'L2'};
+    if(p<50)return{l:3,cls:'l3',label:'L3'};if(p<60)return{l:4,cls:'l4',label:'L4'};
+    if(p<70)return{l:5,cls:'l5',label:'L5'};if(p<80)return{l:6,cls:'l6',label:'L6'};
+    if(p<90)return{l:7,cls:'l7',label:'L7'};return{l:8,cls:'l8',label:'L8'};
+  }
+  function isAbsentA(marks){return marks.every(v=>(Number(v)||0)===0);}
+
+  const real=ss.filter(s=>s.name);
+  const written=real.filter(s=>!isAbsentA(s.marks));
+  const pcts=written.map(s=>getPctA(s.marks));
+  const avg=pcts.length?Math.round(pcts.reduce((a,b)=>a+b,0)/pcts.length):0;
+  const passing=pcts.filter(p=>p>=50).length;
+  const lvlCounts=[0,0,0,0,0,0,0,0];
+  written.forEach(s=>{lvlCounts[getLevelA(getPctA(s.marks)).l-1]++;});
+  const qAvgs=qs.map((q,qi)=>{
+    const vals=written.map(s=>Number(s.marks[qi])||0);
+    const a=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:0;
+    return{q,avg:Math.round(a*10)/10,pct:q.max?Math.round(a/q.max*100):0};
+  });
+
+  // SVG chart
+  const barW=44,gap=12,chartH=140,svgPadL=30,svgPadB=28;
+  const svgW=svgPadL+(barW+gap)*qs.length+gap;
+  const gridLines=[0,20,40,60,80,100].map(v=>{
+    const y=chartH-Math.round(v/100*chartH);
+    return`<line x1="${svgPadL}" y1="${y}" x2="${svgW}" y2="${y}" stroke="#ddd" stroke-width="1"/>
+    <text x="${svgPadL-4}" y="${y+3}" text-anchor="end" font-size="9" fill="#999" font-family="Arial">${v}</text>`;
+  }).join('');
+  const bars=qAvgs.map((item,i)=>{
+    const bh=Math.max(2,Math.round(item.pct/100*chartH));
+    const x=svgPadL+gap+i*(barW+gap);
+    const y=chartH-bh;
+    const col=item.pct>=60?'#2e7d42':item.pct>=40?'#b8860b':'#8b2020';
+    return`<rect x="${x}" y="${y}" width="${barW}" height="${bh}" fill="${col}"/>
+    <text x="${x+barW/2}" y="${y-4}" text-anchor="middle" font-size="10" font-weight="700" fill="${col}" font-family="Arial">${item.pct}</text>
+    <text x="${x+barW/2}" y="${chartH+16}" text-anchor="middle" font-size="10" fill="#555" font-family="Arial">${i+1}</text>`;
+  }).join('');
+
+  // Open modal
+  const modal=document.getElementById('admin-modal');
+  const body=document.getElementById('admin-modal-body');
+  modal.style.display='flex';
+  body.innerHTML=`
+    <div style="font-family:Arial,sans-serif;font-size:13px">
+      <!-- HEADER -->
+      <div style="background:var(--green-dark);color:white;padding:14px 18px;margin:-1.5rem -1.5rem 1rem;border-radius:6px 6px 0 0;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-size:16px;font-weight:700">${teacherName}</div>
+          <div style="font-size:12px;opacity:0.8;margin-top:2px">${a.profiles?.subject||''} · Grade ${a.profiles?.grade||''} · ${a.task||''} · ${a.date||''}</div>
+        </div>
+        <div style="font-size:11px;opacity:0.7;text-align:right">READ ONLY</div>
+      </div>
+
+      <!-- STATS -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1rem">
+        <div style="background:var(--paper2);border-radius:4px;padding:10px 12px"><div style="font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.06em">Class Average</div><div style="font-size:24px;font-weight:300;margin-top:3px">${avg}%</div></div>
+        <div style="background:var(--paper2);border-radius:4px;padding:10px 12px"><div style="font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.06em">Passing</div><div style="font-size:24px;font-weight:300;margin-top:3px;color:var(--green-dark)">${passing}</div></div>
+        <div style="background:var(--paper2);border-radius:4px;padding:10px 12px"><div style="font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.06em">Failing</div><div style="font-size:24px;font-weight:300;margin-top:3px;color:var(--red)">${written.length-passing}</div></div>
+        <div style="background:var(--paper2);border-radius:4px;padding:10px 12px"><div style="font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.06em">Absent</div><div style="font-size:24px;font-weight:300;margin-top:3px;color:var(--ink3)">${real.length-written.length}</div></div>
+      </div>
+
+      <!-- LEVEL DISTRIBUTION -->
+      <div style="font-size:10px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--ink3);margin-bottom:6px">Performance by level</div>
+      <div style="display:flex;gap:6px;margin-bottom:1rem;flex-wrap:wrap">
+        ${['L1 0–29','L2 30–39','L3 40–49','L4 50–59','L5 60–69','L6 70–79','L7 80–89','L8 90–100'].map((lbl,i)=>{
+          const [ll,rr]=lbl.split(' ');
+          const cls=['l1','l2','l3','l4','l5','l6','l7','l8'][i];
+          return`<div style="text-align:center;min-width:56px;border:1px solid var(--border);border-radius:3px;padding:5px 8px;background:white">
+            <div style="font-size:20px;font-weight:300">${lvlCounts[i]}</div>
+            <span class="lb ${cls}" style="margin-top:3px;display:inline-block">${ll}</span>
+            <div style="font-size:9px;color:var(--ink3);margin-top:2px">${rr}</div>
+          </div>`;
+        }).join('')}
+      </div>
+
+      <!-- Q AVERAGES -->
+      <div style="font-size:10px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--ink3);margin-bottom:6px">Average per topic</div>
+      <div style="background:white;border:1px solid var(--border);border-radius:4px;padding:10px 14px;margin-bottom:1rem">
+        ${qAvgs.map(({q,avg,pct})=>{
+          const col=pct>=60?'#2e7d42':pct>=40?'#b8860b':'#8b2020';
+          return`<div style="display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid var(--paper3)">
+            <div style="flex:2;font-size:11px"><strong>${q.label}</strong> — ${q.topic} <span style="color:var(--ink3)">(/${q.max})</span></div>
+            <div style="flex:3;height:8px;background:var(--paper2);border-radius:4px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${col};border-radius:4px"></div></div>
+            <div style="font-size:11px;font-family:var(--mono);min-width:50px;text-align:right">${avg} (${pct}%)</div>
+          </div>`;
+        }).join('')}
+      </div>
+
+      <!-- BAR CHART -->
+      <div style="font-size:10px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--ink3);margin-bottom:6px">Average % per question</div>
+      <div style="background:white;border:1px solid var(--border);border-radius:4px;padding:10px;margin-bottom:1rem">
+        <svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 ${svgW} ${chartH+svgPadB+10}" style="display:block;overflow:visible">
+          <g transform="translate(0,5)">${gridLines}${bars}
+            <line x1="${svgPadL}" y1="0" x2="${svgPadL}" y2="${chartH}" stroke="#ccc" stroke-width="1"/>
+            <line x1="${svgPadL}" y1="${chartH}" x2="${svgW}" y2="${chartH}" stroke="#ccc" stroke-width="1"/>
+          </g>
+        </svg>
+      </div>
+
+      <!-- FULL LEARNER TABLE -->
+      <div style="font-size:10px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--ink3);margin-bottom:6px">Full class results</div>
+      <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:11px">
+          <thead><tr>
+            <th style="background:var(--green-dark);color:white;padding:5px 8px;text-align:left">#</th>
+            <th style="background:var(--green-dark);color:white;padding:5px 8px;text-align:left">Learner</th>
+            ${qs.map(q=>`<th style="background:var(--green-dark);color:white;padding:5px 6px;text-align:center">${q.label}</th>`).join('')}
+            <th style="background:var(--green-dark);color:white;padding:5px 6px;text-align:center">Total</th>
+            <th style="background:var(--green-dark);color:white;padding:5px 6px;text-align:center">%</th>
+            <th style="background:var(--green-dark);color:white;padding:5px 6px;text-align:center">Level</th>
+          </tr></thead>
+          <tbody>
+            ${real.map((s,i)=>{
+              const tot=s.marks.reduce((a,v)=>a+(Number(v)||0),0);
+              const pct=getPctA(s.marks);
+              const lv=getLevelA(pct);
+              const ab=isAbsentA(s.marks);
+              return`<tr style="background:${i%2===0?'white':'#f8fcf5'}${ab?';opacity:0.4':''}">
+                <td style="border:1px solid var(--paper3);padding:3px 8px;color:var(--ink3)">${i+1}</td>
+                <td style="border:1px solid var(--paper3);padding:3px 8px">${s.name}</td>
+                ${qs.map((q,qi)=>`<td style="border:1px solid var(--paper3);padding:3px 6px;text-align:center;font-family:var(--mono)">${ab?'—':s.marks[qi]||0}</td>`).join('')}
+                <td style="border:1px solid var(--paper3);padding:3px 6px;text-align:center;font-weight:600;background:#fffff0;font-family:var(--mono)">${ab?'—':tot}</td>
+                <td style="border:1px solid var(--paper3);padding:3px 6px;text-align:center;font-weight:600;color:var(--green-dark);font-family:var(--mono)">${ab?'—':pct+'%'}</td>
+                <td style="border:1px solid var(--paper3);padding:3px 6px;text-align:center"><span class="lb ${lv.cls}">${ab?'ABS':lv.label}</span></td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
 }
 
 // ── DRAWER (saved analyses panel) ───────────────────────────────────────────
@@ -1151,6 +1315,14 @@ document.addEventListener('DOMContentLoaded',()=>{
   showAuthScreen();
 });
 </script>
+
+<!-- ADMIN DETAIL MODAL -->
+<div id="admin-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:999;align-items:flex-start;justify-content:center;padding:1rem;overflow-y:auto">
+  <div style="background:white;border-radius:8px;padding:1.5rem;width:100%;max-width:900px;margin:auto;position:relative">
+    <button onclick="document.getElementById('admin-modal').style.display='none'" style="position:sticky;top:0;float:right;background:var(--green-dark);color:white;border:none;border-radius:3px;padding:6px 14px;font-size:12px;cursor:pointer;font-family:var(--sans);margin-bottom:0.5rem">✕ Close</button>
+    <div id="admin-modal-body"></div>
+  </div>
+</div>
 
 <!-- AUTH SCREEN -->
 <div id="auth-screen" style="display:none;position:fixed;inset:0;background:var(--green-dark);z-index:999;align-items:center;justify-content:center;flex-direction:column">
