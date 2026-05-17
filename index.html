@@ -83,7 +83,7 @@ tr.absent td{opacity:0.4;}
 
 /* PRINT */
 @media print{
-  .topbar,.npbar,.add-s-btn,.add-q-btn,.remove-q,.print-btn,.setup-grid,.q-config,.section-lbl{display:none!important;}
+  .topbar,.npbar,.add-s-btn,.add-q-btn,.remove-q,.print-btn,.setup-grid,.q-config,.section-lbl,.ai-suggest-btn{display:none!important;}
   .page{display:block!important;padding:0;max-width:none;}
   .page:not(.pt){display:none!important;}
   body{background:white;}
@@ -539,7 +539,7 @@ function renderSpip(){
       <td style="border:1px solid #bbb;padding:3px;background:#f0f4ff;vertical-align:top;width:105px"><textarea style="${taS}" placeholder="e.g. Level 1–3 learners (approx. ${atRiskCount})"></textarea></td>
       <td style="border:1px solid #bbb;padding:3px;background:#f0fff4;vertical-align:top;width:140px;position:relative">
         <textarea id="intervention-${i}" style="${taS}" placeholder="Describe intervention strategy / activity..."></textarea>
-        <button onclick="suggestIntervention(${i})" style="margin-top:3px;padding:3px 8px;font-size:10px;border:1px solid #2e7d42;background:white;color:#1a4d25;border-radius:2px;cursor:pointer;width:100%;font-family:Arial"><span id="ai-spin-${i}" style="display:none">⏳ </span>✦ AI suggest</button>
+        <button class="ai-suggest-btn" onclick="suggestIntervention(${i})" style="margin-top:3px;padding:3px 8px;font-size:10px;border:1px solid #2e7d42;background:white;color:#1a4d25;border-radius:2px;cursor:pointer;width:100%;font-family:Arial"><span id="ai-spin-${i}" style="display:none">⏳ </span>✦ AI suggest</button>
       </td>
       <td style="border:1px solid #bbb;padding:3px;vertical-align:top;width:100px"><textarea style="${taS}" placeholder="e.g. Learners achieve ≥${m.target}% in next assessment..."></textarea></td>
       <td style="border:1px solid #bbb;padding:3px;vertical-align:top;width:100px"><textarea style="${taS}" placeholder="e.g. Educator, HOD, SBST..."></textarea></td>
@@ -638,20 +638,29 @@ async function suggestIntervention(rowIdx){
   ta.value='Generating suggestion...';
   ta.style.color='#999';
   try{
-    const res=await fetch("https://api.anthropic.com/v1/messages",{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({
-        model:"claude-sonnet-4-20250514",
-        max_tokens:1000,
-        messages:[{role:"user",content:`You are a South African high school educator. Suggest a practical, specific intervention strategy for a Grade ${m.grade} ${m.subject} class that scored only ${pct}% on the topic: "${topicName}". Write 3-4 sentences describing concrete classroom activities, remediation steps, and support strategies the educator can implement. Be direct and practical. No headings, just a paragraph.`}]
-      })
+    // Call via Supabase Edge Function to avoid CORS
+    const prompt=`You are a South African high school educator. Suggest a practical, specific intervention strategy for a Grade ${m.grade} ${m.subject} class that scored only ${pct}% on the topic: "${topicName}". Write 3-4 sentences describing concrete classroom activities, remediation steps, and support strategies the educator can implement. Be direct and practical. No headings, just a paragraph.`;
+    const res=await fetch('https://qcghljfqdonbbgimhqfe.supabase.co/functions/v1/ai-suggest',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':'Bearer '+(accessToken||SUPA_ANON)
+      },
+      body:JSON.stringify({prompt})
     });
+    if(!res.ok){
+      const err=await res.text();
+      console.error('AI suggest error:',res.status,err);
+      ta.value='Could not generate — try again shortly.';
+      ta.style.color='#8b2020';
+      spin.style.display='none';
+      return;
+    }
     const data=await res.json();
-    const text=data.content?.map(b=>b.text||'').join('')||'';
-    ta.value=text||'No suggestion returned.';
+    ta.value=data.text||data.content||'No suggestion returned.';
     ta.style.color='#1a1a18';
   }catch(e){
+    console.error('AI suggest exception:',e);
     ta.value='Could not generate — check your connection and try again.';
     ta.style.color='#8b2020';
   }
