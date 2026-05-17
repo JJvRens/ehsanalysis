@@ -1012,6 +1012,8 @@ async function saveAnalysis(){
       return;
     }
     // Step 2: save analysis
+    // Collect SPIP field values
+    saveSpipValues();
     const payload={
       teacher_id:currentUser.id,
       task:m.task||'Untitled',
@@ -1021,6 +1023,7 @@ async function saveAnalysis(){
       target:m.target||'50',
       questions:JSON.stringify(questions),
       students:JSON.stringify(students),
+      spip_data:JSON.stringify(window._spipValues||{}),
       updated_at:new Date().toISOString()
     };
     let res;
@@ -1072,6 +1075,7 @@ async function loadAnalysis(id){
   // Restore state
   try{questions=JSON.parse(a.questions);}catch{}
   try{students=JSON.parse(a.students);}catch{}
+  try{window._spipValues=JSON.parse(a.spip_data||'{}');window._spipRendered=false;}catch{}
   // Restore meta fields
   if(a.task)document.getElementById('f-task').value=a.task;
   if(a.date)document.getElementById('f-date').value=a.date;
