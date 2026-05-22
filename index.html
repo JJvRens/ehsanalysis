@@ -1014,18 +1014,10 @@ async function saveAnalysis(){
       return;
     }
     // Step 2: save analysis
-    // Read SPIP values directly from DOM if on SPIP tab, otherwise use stored values
-    const spipDomValues={};
-    document.querySelectorAll('#spip-render textarea').forEach(ta=>{
-      if(ta.id)spipDomValues[ta.id]=ta.value;
-    });
-    // Merge DOM values into keyed store
+    // Capture current SPIP state from DOM before saving
+    saveSpipValues();
     const spipKey=currentAnalysisId||'__new__';
-    if(!window._allSpipValues)window._allSpipValues={};
-    if(Object.keys(spipDomValues).length>0){
-      window._allSpipValues[spipKey]=spipDomValues;
-    }
-    const spipToSave=window._allSpipValues[spipKey]||{};
+    const spipToSave=(window._allSpipValues&&window._allSpipValues[spipKey])||{};
     const payload={
       teacher_id:currentUser.id,
       task:m.task||'Untitled',
@@ -1464,25 +1456,26 @@ function toggleAuthMode(){
 
 // Save SPIP typed values before leaving tab
 function saveSpipValues(){
-  const saved={};
-  document.querySelectorAll('#spip-render textarea').forEach(ta=>{
+  if(!window._allSpipValues)window._allSpipValues={};
+  const key=currentAnalysisId||'__new__';
+  // Only update if there are actual textareas rendered
+  const textareas=document.querySelectorAll('#spip-render textarea');
+  if(textareas.length===0)return;
+  const saved=window._allSpipValues[key]||{};
+  textareas.forEach(ta=>{
     if(ta.id)saved[ta.id]=ta.value;
   });
-  // Save keyed by current analysis ID so different analyses don't overwrite each other
-  const key=currentAnalysisId||'__new__';
-  if(!window._allSpipValues)window._allSpipValues={};
   window._allSpipValues[key]=saved;
-  // Also keep _spipValues pointing to current for backward compat
-  window._spipValues=saved;
 }
 
 // Restore SPIP typed values after render
 function restoreSpipValues(){
+  if(!window._allSpipValues)return;
   const key=currentAnalysisId||'__new__';
-  const saved=(window._allSpipValues&&window._allSpipValues[key])||window._spipValues||{};
+  const saved=window._allSpipValues[key]||{};
   Object.entries(saved).forEach(([id,val])=>{
     const el=document.getElementById(id);
-    if(el)el.value=val;
+    if(el&&val)el.value=val;
   });
 }
 
