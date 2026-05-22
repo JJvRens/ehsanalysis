@@ -1077,10 +1077,12 @@ async function loadAnalysis(id){
   // Restore state
   try{questions=JSON.parse(a.questions);}catch{}
   try{students=JSON.parse(a.students);}catch{}
-  // Store spip data and force re-render with restore
-  try{
-    window._spipValues=JSON.parse(a.spip_data||'{}');
-  }catch{window._spipValues={};}
+  // Store spip data keyed by analysis ID
+  let spipVals={};
+  try{spipVals=JSON.parse(a.spip_data||'{}');}catch{}
+  if(!window._allSpipValues)window._allSpipValues={};
+  window._allSpipValues[id]=spipVals;
+  window._spipValues=spipVals;
   window._spipRendered=false;
   window._fnRendered=false;
   // Restore meta fields
@@ -1452,12 +1454,18 @@ function saveSpipValues(){
   document.querySelectorAll('#spip-render textarea').forEach(ta=>{
     if(ta.id)saved[ta.id]=ta.value;
   });
+  // Save keyed by current analysis ID so different analyses don't overwrite each other
+  const key=currentAnalysisId||'__new__';
+  if(!window._allSpipValues)window._allSpipValues={};
+  window._allSpipValues[key]=saved;
+  // Also keep _spipValues pointing to current for backward compat
   window._spipValues=saved;
 }
 
 // Restore SPIP typed values after render
 function restoreSpipValues(){
-  const saved=window._spipValues||{};
+  const key=currentAnalysisId||'__new__';
+  const saved=(window._allSpipValues&&window._allSpipValues[key])||window._spipValues||{};
   Object.entries(saved).forEach(([id,val])=>{
     const el=document.getElementById(id);
     if(el)el.value=val;
