@@ -1014,8 +1014,18 @@ async function saveAnalysis(){
       return;
     }
     // Step 2: save analysis
-    // Collect SPIP field values
-    saveSpipValues();
+    // Read SPIP values directly from DOM if on SPIP tab, otherwise use stored values
+    const spipDomValues={};
+    document.querySelectorAll('#spip-render textarea').forEach(ta=>{
+      if(ta.id)spipDomValues[ta.id]=ta.value;
+    });
+    // Merge DOM values into keyed store
+    const spipKey=currentAnalysisId||'__new__';
+    if(!window._allSpipValues)window._allSpipValues={};
+    if(Object.keys(spipDomValues).length>0){
+      window._allSpipValues[spipKey]=spipDomValues;
+    }
+    const spipToSave=window._allSpipValues[spipKey]||{};
     const payload={
       teacher_id:currentUser.id,
       task:m.task||'Untitled',
@@ -1025,7 +1035,7 @@ async function saveAnalysis(){
       target:m.target||'50',
       questions:JSON.stringify(questions),
       students:JSON.stringify(students),
-      spip_data:JSON.stringify(window._spipValues||{}),
+      spip_data:JSON.stringify(spipToSave),
       updated_at:new Date().toISOString()
     };
     let res;
@@ -1077,14 +1087,18 @@ async function loadAnalysis(id){
   // Restore state
   try{questions=JSON.parse(a.questions);}catch{}
   try{students=JSON.parse(a.students);}catch{}
-  // Store spip data keyed by analysis ID
+  // Store spip data keyed by analysis ID — clear old display first
   let spipVals={};
   try{spipVals=JSON.parse(a.spip_data||'{}');}catch{}
   if(!window._allSpipValues)window._allSpipValues={};
   window._allSpipValues[id]=spipVals;
   window._spipValues=spipVals;
+  // Force full re-render of SPIP and fortnightly for new analysis
   window._spipRendered=false;
   window._fnRendered=false;
+  // Clear the SPIP render so old content is gone immediately
+  const spipRender=document.getElementById('spip-render');
+  if(spipRender)spipRender.innerHTML='';
   // Restore meta fields
   if(a.task)document.getElementById('f-task').value=a.task;
   if(a.date)document.getElementById('f-date').value=a.date;
