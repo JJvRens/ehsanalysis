@@ -1010,6 +1010,7 @@ async function handleLogin(){
   const err=document.getElementById('auth-error');
   const isSignup=document.getElementById('auth-mode').dataset.mode==='signup';
   if(!email||!password){err.textContent='Please enter email and password.';return;}
+  if(password.length<1){err.textContent='Please enter a password.';return;}
   btn.textContent='Please wait...';btn.disabled=true;err.textContent='';
   const data=await supaAuth(email,password,isSignup);
   if(data.error||data.msg){
@@ -1387,6 +1388,37 @@ function toggleDrawer(force){
   if(open)loadMyAnalyses();
 }
 
+// ── FORGOT PASSWORD ────────────────────────────────────────────────────────
+function showForgotPanel(){
+  document.getElementById('auth-mode').style.display='none';
+  document.getElementById('forgot-panel').style.display='block';
+  document.getElementById('forgot-msg').textContent='';
+  const email=document.getElementById('auth-email').value;
+  if(email)document.getElementById('forgot-email').value=email;
+}
+function hideForgotPanel(){
+  document.getElementById('forgot-panel').style.display='none';
+  document.getElementById('auth-mode').style.display='block';
+}
+async function sendResetEmail(){
+  const email=document.getElementById('forgot-email').value.trim();
+  const msg=document.getElementById('forgot-msg');
+  if(!email){msg.style.color='var(--red)';msg.textContent='Please enter your email.';return;}
+  msg.style.color='var(--ink3)';msg.textContent='Sending...';
+  try{
+    const res=await fetch(SUPA_URL+'/auth/v1/recover',{
+      method:'POST',
+      headers:{'apikey':SUPA_ANON,'Content-Type':'application/json'},
+      body:JSON.stringify({email})
+    });
+    msg.style.color='var(--green-mid)';
+    msg.textContent='If that email exists, a reset link has been sent. Check your inbox.';
+  }catch(e){
+    msg.style.color='var(--red)';
+    msg.textContent='Connection error. Please try again.';
+  }
+}
+
 // ── INIT ────────────────────────────────────────────────────────────────────
 updateMeta();renderQConfig();
 // Show auth screen on load
@@ -1411,6 +1443,8 @@ document.addEventListener('DOMContentLoaded',()=>{
       <div style="font-size:18px;font-weight:700;color:var(--green-dark)">Evander High School</div>
       <div style="font-size:12px;color:var(--ink3);margin-top:2px">Learner Performance Tool</div>
     </div>
+
+    <!-- LOGIN / SIGNUP PANEL -->
     <div id="auth-mode" data-mode="login">
       <div style="margin-bottom:10px">
         <label style="font-size:11px;font-weight:600;color:var(--ink3);letter-spacing:0.07em;text-transform:uppercase;display:block;margin-bottom:3px">Email</label>
@@ -1422,9 +1456,26 @@ document.addEventListener('DOMContentLoaded',()=>{
       </div>
       <div id="auth-error" style="color:var(--red);font-size:12px;min-height:18px;margin-bottom:8px"></div>
       <button id="auth-btn" onclick="handleLogin()" style="width:100%;padding:10px;background:var(--green-dark);color:white;border:none;border-radius:4px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans)">Log in</button>
-      <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--ink3)">
-        <span id="auth-toggle-text">Don't have an account?</span>
-        <button onclick="toggleAuthMode()" style="background:none;border:none;color:var(--green-mid);cursor:pointer;font-size:12px;font-family:var(--sans);font-weight:600;margin-left:4px" id="auth-toggle-btn">Sign up</button>
+      <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--ink3);display:flex;justify-content:center;gap:12px;flex-wrap:wrap">
+        <div>
+          <span id="auth-toggle-text">Don't have an account?</span>
+          <button onclick="toggleAuthMode()" style="background:none;border:none;color:var(--green-mid);cursor:pointer;font-size:12px;font-family:var(--sans);font-weight:600;margin-left:4px" id="auth-toggle-btn">Sign up</button>
+        </div>
+        <button id="forgot-btn" onclick="showForgotPanel()" style="background:none;border:none;color:var(--ink3);cursor:pointer;font-size:12px;font-family:var(--sans);text-decoration:underline">Forgot password?</button>
+      </div>
+    </div>
+
+    <!-- FORGOT PASSWORD PANEL -->
+    <div id="forgot-panel" style="display:none">
+      <div style="font-size:13px;color:var(--ink2);margin-bottom:12px">Enter your email and we'll send you a reset link.</div>
+      <div style="margin-bottom:10px">
+        <label style="font-size:11px;font-weight:600;color:var(--ink3);letter-spacing:0.07em;text-transform:uppercase;display:block;margin-bottom:3px">Email</label>
+        <input id="forgot-email" type="email" placeholder="your@email.com" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:4px;font-size:13px;font-family:var(--sans);outline:none" onkeydown="if(event.key==='Enter')sendResetEmail()"/>
+      </div>
+      <div id="forgot-msg" style="font-size:12px;min-height:18px;margin-bottom:8px"></div>
+      <button onclick="sendResetEmail()" style="width:100%;padding:10px;background:var(--green-dark);color:white;border:none;border-radius:4px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans)">Send reset link</button>
+      <div style="text-align:center;margin-top:12px">
+        <button onclick="hideForgotPanel()" style="background:none;border:none;color:var(--green-mid);cursor:pointer;font-size:12px;font-family:var(--sans);font-weight:600">← Back to login</button>
       </div>
     </div>
   </div>
