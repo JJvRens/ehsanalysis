@@ -96,6 +96,13 @@ tr.absent td{opacity:0.4;}
   table.et td input.mi{border:none;background:transparent;font-weight:600;}
   table.et td input.ni{border:none;background:transparent;}
   table.et th{background:#1a4d25!important;color:white!important;}
+  /* Hide scrollbars and textarea resize handles */
+  *{scrollbar-width:none!important;-ms-overflow-style:none!important;}
+  *::-webkit-scrollbar{display:none!important;}
+  textarea{resize:none!important;overflow:hidden!important;}
+  /* Hide overflow scrollbars on SPIP table wrapper */
+  #spip-render{overflow:visible!important;}
+  #spip-render>div{overflow:visible!important;}
 }
 
 /* MOBILE */
