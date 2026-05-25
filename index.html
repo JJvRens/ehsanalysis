@@ -1444,46 +1444,48 @@ document.addEventListener('DOMContentLoaded',()=>{
 </div>
 
 <!-- AUTH SCREEN -->
-<div id="auth-screen" style="display:none;position:fixed;inset:0;background:var(--green-dark);z-index:999;align-items:center;justify-content:center;flex-direction:column">
-  <div style="background:white;border-radius:8px;padding:2rem;width:100%;max-width:380px;margin:1rem">
+<div id="auth-screen" style="display:none;position:fixed;inset:0;z-index:999;align-items:center;justify-content:center;flex-direction:column;background:url('background.png') center center/cover no-repeat;">
+  <!-- Dark overlay so text is readable -->
+  <div style="position:absolute;inset:0;background:rgba(0,0,0,0.45)"></div>
+  <div style="position:relative;z-index:1;background:rgba(255,255,255,0.15);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,0.3);border-radius:12px;padding:2rem;width:100%;max-width:380px;margin:1rem;box-shadow:0 8px 32px rgba(0,0,0,0.3)">
     <div style="text-align:center;margin-bottom:1.5rem">
-      <img src="wapen.jpeg" style="width:60px;height:60px;object-fit:contain;margin-bottom:8px" onerror="this.style.display='none'"/>
-      <div style="font-size:18px;font-weight:700;color:var(--green-dark)">Evander High School</div>
-      <div style="font-size:12px;color:var(--ink3);margin-top:2px">Learner Performance Tool</div>
+      <img src="wapen.jpeg" style="width:70px;height:70px;object-fit:contain;margin-bottom:10px;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.3))" onerror="this.style.display='none'"/>
+      <div style="font-size:20px;font-weight:700;color:white;text-shadow:0 1px 4px rgba(0,0,0,0.4)">Evander High School</div>
+      <div style="font-size:12px;color:rgba(255,255,255,0.8);margin-top:2px;letter-spacing:0.05em;text-transform:uppercase">Learner Performance Tool</div>
     </div>
 
     <!-- LOGIN / SIGNUP PANEL -->
     <div id="auth-mode" data-mode="login">
       <div style="margin-bottom:10px">
-        <label style="font-size:11px;font-weight:600;color:var(--ink3);letter-spacing:0.07em;text-transform:uppercase;display:block;margin-bottom:3px">Email</label>
-        <input id="auth-email" type="email" placeholder="your@email.com" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:4px;font-size:13px;font-family:var(--sans);outline:none"/>
+        <label style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.9);letter-spacing:0.07em;text-transform:uppercase;display:block;margin-bottom:3px">Email</label>
+        <input id="auth-email" type="email" placeholder="your@email.com" style="width:100%;padding:8px 10px;border:1px solid rgba(255,255,255,0.4);border-radius:6px;font-size:13px;font-family:var(--sans);outline:none;background:rgba(255,255,255,0.2);color:white;"/>
       </div>
       <div style="margin-bottom:6px">
-        <label style="font-size:11px;font-weight:600;color:var(--ink3);letter-spacing:0.07em;text-transform:uppercase;display:block;margin-bottom:3px">Password</label>
-        <input id="auth-password" type="password" placeholder="••••••••" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:4px;font-size:13px;font-family:var(--sans);outline:none" onkeydown="if(event.key==='Enter')handleLogin()"/>
+        <label style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.9);letter-spacing:0.07em;text-transform:uppercase;display:block;margin-bottom:3px">Password</label>
+        <input id="auth-password" type="password" placeholder="••••••••" style="width:100%;padding:8px 10px;border:1px solid rgba(255,255,255,0.4);border-radius:6px;font-size:13px;font-family:var(--sans);outline:none;background:rgba(255,255,255,0.2);color:white;" onkeydown="if(event.key==='Enter')handleLogin()"/>
       </div>
-      <div id="auth-error" style="color:var(--red);font-size:12px;min-height:18px;margin-bottom:8px"></div>
-      <button id="auth-btn" onclick="handleLogin()" style="width:100%;padding:10px;background:var(--green-dark);color:white;border:none;border-radius:4px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans)">Log in</button>
-      <div style="text-align:center;margin-top:12px;font-size:12px;color:var(--ink3);display:flex;justify-content:center;gap:12px;flex-wrap:wrap">
+      <div id="auth-error" style="color:#ffb3b3;font-size:12px;min-height:18px;margin-bottom:8px"></div>
+      <button id="auth-btn" onclick="handleLogin()" style="width:100%;padding:10px;background:var(--green-dark);color:white;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans);box-shadow:0 2px 8px rgba(0,0,0,0.3)">Log in</button>
+      <div style="text-align:center;margin-top:12px;font-size:12px;color:rgba(255,255,255,0.7);display:flex;justify-content:center;gap:12px;flex-wrap:wrap">
         <div>
           <span id="auth-toggle-text">Don't have an account?</span>
-          <button onclick="toggleAuthMode()" style="background:none;border:none;color:var(--green-mid);cursor:pointer;font-size:12px;font-family:var(--sans);font-weight:600;margin-left:4px" id="auth-toggle-btn">Sign up</button>
+          <button onclick="toggleAuthMode()" style="background:none;border:none;color:rgba(255,255,255,0.95);cursor:pointer;font-size:12px;font-family:var(--sans);font-weight:600;margin-left:4px;text-decoration:underline" id="auth-toggle-btn">Sign up</button>
         </div>
-        <button id="forgot-btn" onclick="showForgotPanel()" style="background:none;border:none;color:var(--ink3);cursor:pointer;font-size:12px;font-family:var(--sans);text-decoration:underline">Forgot password?</button>
+        <button id="forgot-btn" onclick="showForgotPanel()" style="background:none;border:none;color:rgba(255,255,255,0.7);cursor:pointer;font-size:12px;font-family:var(--sans);text-decoration:underline">Forgot password?</button>
       </div>
     </div>
 
     <!-- FORGOT PASSWORD PANEL -->
     <div id="forgot-panel" style="display:none">
-      <div style="font-size:13px;color:var(--ink2);margin-bottom:12px">Enter your email and we'll send you a reset link.</div>
+      <div style="font-size:13px;color:rgba(255,255,255,0.85);margin-bottom:12px">Enter your email and we'll send you a reset link.</div>
       <div style="margin-bottom:10px">
-        <label style="font-size:11px;font-weight:600;color:var(--ink3);letter-spacing:0.07em;text-transform:uppercase;display:block;margin-bottom:3px">Email</label>
-        <input id="forgot-email" type="email" placeholder="your@email.com" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:4px;font-size:13px;font-family:var(--sans);outline:none" onkeydown="if(event.key==='Enter')sendResetEmail()"/>
+        <label style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.9);letter-spacing:0.07em;text-transform:uppercase;display:block;margin-bottom:3px">Email</label>
+        <input id="forgot-email" type="email" placeholder="your@email.com" style="width:100%;padding:8px 10px;border:1px solid rgba(255,255,255,0.4);border-radius:6px;font-size:13px;font-family:var(--sans);outline:none;background:rgba(255,255,255,0.2);color:white;" onkeydown="if(event.key==='Enter')sendResetEmail()"/>
       </div>
-      <div id="forgot-msg" style="font-size:12px;min-height:18px;margin-bottom:8px"></div>
-      <button onclick="sendResetEmail()" style="width:100%;padding:10px;background:var(--green-dark);color:white;border:none;border-radius:4px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans)">Send reset link</button>
+      <div id="forgot-msg" style="font-size:12px;min-height:18px;margin-bottom:8px;color:rgba(255,255,255,0.85)"></div>
+      <button onclick="sendResetEmail()" style="width:100%;padding:10px;background:var(--green-dark);color:white;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans);box-shadow:0 2px 8px rgba(0,0,0,0.3)">Send reset link</button>
       <div style="text-align:center;margin-top:12px">
-        <button onclick="hideForgotPanel()" style="background:none;border:none;color:var(--green-mid);cursor:pointer;font-size:12px;font-family:var(--sans);font-weight:600">← Back to login</button>
+        <button onclick="hideForgotPanel()" style="background:none;border:none;color:rgba(255,255,255,0.8);cursor:pointer;font-size:12px;font-family:var(--sans);font-weight:600;text-decoration:underline">← Back to login</button>
       </div>
     </div>
   </div>
