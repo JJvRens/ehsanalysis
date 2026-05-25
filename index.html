@@ -421,7 +421,7 @@ function renderSummary(){
   });
   const m=getMeta();
 
-  // Chart dimensions
+  // Chart
   const barW=40,gap=10,chartH=180,svgPadL=38,svgPadB=30;
   const svgW=svgPadL+(barW+gap)*10+gap+10;
   const svgH=chartH+svgPadB;
@@ -430,83 +430,89 @@ function renderSummary(){
   const gridLines=gridVals.map(v=>{
     const y=chartH-Math.round(v/maxVal*chartH);
     return`<line x1="${svgPadL}" y1="${y}" x2="${svgW}" y2="${y}" stroke="#ddd" stroke-width="1"/>
-    <text x="${svgPadL-4}" y="${y+4}" text-anchor="end" font-size="9" fill="#555" font-family="Arial">${v}</text>`;
+    <text x="${svgPadL-4}" y="${y+4}" text-anchor="end" font-size="9" fill="#555" font-family="Calibri,Arial">${v}</text>`;
   }).join('');
+  const defs=Array.from({length:10},(_,i)=>`<pattern id="hatch${i}" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="#555" stroke-width="2.5"/></pattern>`).join('');
   const barsSvg=Array.from({length:10},(_,i)=>{
     const item=qAvgs[i];
     const x=svgPadL+gap+i*(barW+gap);
     const labelY=chartH+18;
     if(!item||item.pct===0){
-      return`<text x="${x+barW/2}" y="${labelY}" text-anchor="middle" font-size="10" fill="#555" font-family="Arial">${i+1}</text>
-      <text x="${x+barW/2}" y="${chartH-3}" text-anchor="middle" font-size="9" fill="#aaa" font-family="Arial">0</text>`;
+      return`<text x="${x+barW/2}" y="${labelY}" text-anchor="middle" font-size="10" fill="#555" font-family="Calibri,Arial">${i+1}</text>
+      <text x="${x+barW/2}" y="${chartH-3}" text-anchor="middle" font-size="9" fill="#aaa" font-family="Calibri,Arial">0</text>`;
     }
     const bh=Math.max(3,Math.round(item.pct/maxVal*chartH));
     const y=chartH-bh;
     return`<rect x="${x}" y="${y}" width="${barW}" height="${bh}" fill="url(#hatch${i})" stroke="#444" stroke-width="0.5"/>
-    <text x="${x+barW/2}" y="${y-4}" text-anchor="middle" font-size="10" font-weight="700" fill="#222" font-family="Arial">${item.pct}</text>
-    <text x="${x+barW/2}" y="${labelY}" text-anchor="middle" font-size="10" fill="#555" font-family="Arial">${i+1}</text>`;
+    <text x="${x+barW/2}" y="${y-4}" text-anchor="middle" font-size="10" font-weight="700" fill="#222" font-family="Calibri,Arial">${item.pct}</text>
+    <text x="${x+barW/2}" y="${labelY}" text-anchor="middle" font-size="10" fill="#555" font-family="Calibri,Arial">${i+1}</text>`;
   }).join('');
-  const defs=Array.from({length:10},(_,i)=>`<pattern id="hatch${i}" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="#555" stroke-width="2.5"/></pattern>`).join('');
 
   document.getElementById('summary-content').innerHTML=`
-  <div style="background:white;font-family:Arial,sans-serif;font-size:12px;max-width:980px">
+  <div style="background:white;font-family:Calibri,Arial,sans-serif;font-size:11px;max-width:980px">
 
-    <!-- TOP ROW: left header block + right level table -->
-    <div style="display:flex;align-items:stretch;border:1px solid #999;margin-bottom:14px">
+    <!-- TOP ROW: title block left + level table right, side by side -->
+    <div style="display:flex;align-items:flex-start;gap:16px;margin-bottom:14px">
 
-      <!-- LEFT BLOCK -->
-      <div style="flex:1;border-right:1px solid #999">
-        <!-- Title + logo row -->
-        <div style="display:flex;align-items:stretch;border-bottom:1px solid #999">
-          <div style="flex:1;text-align:center;padding:8px 10px;border-right:1px solid #999;display:flex;flex-direction:column;justify-content:center">
-            <div style="font-weight:700;font-size:13px">ITEM ANALYSIS/DIAGNOSTIC TOOL</div>
-            <div style="font-weight:700;font-size:14px;margin-top:3px">${m.school.toUpperCase()}</div>
-          </div>
-          <div style="width:80px;display:flex;align-items:center;justify-content:center;padding:6px">
-            <img src="wapen.jpeg" style="width:64px;height:64px;object-fit:contain" onerror="this.style.display='none'"/>
-          </div>
+      <!-- LEFT: header block matching Excel exactly -->
+      <div style="flex:1;border:1px solid #999">
+        <!-- Row 1: ITEM ANALYSIS title — light blue background, full width -->
+        <div style="background:#dce6f1;text-align:center;padding:6px 10px;font-weight:700;font-size:12px;font-family:Calibri,Arial;border-bottom:1px solid #999">
+          ITEM ANALYSIS/DIAGNOSTIC TOOL
         </div>
-        <!-- Subject / Task / Educator -->
-        <table style="width:100%;border-collapse:collapse;font-size:12px">
-          <tr style="border-bottom:1px solid #ddd">
-            <td style="font-weight:700;padding:4px 8px;width:90px;border-right:1px solid #ddd">SUBJECT:</td>
+        <!-- Row 2: EVANDER HIGH SCHOOL — white background, Aharoni style -->
+        <div style="text-align:center;padding:5px 10px;font-weight:700;font-size:13px;font-family:'Arial Black',Arial,sans-serif;border-bottom:1px solid #999;letter-spacing:0.5px">
+          ${m.school.toUpperCase()}
+        </div>
+        <!-- Row 3: Logo centered -->
+        <div style="text-align:center;padding:8px;border-bottom:1px solid #999">
+          <img src="wapen.jpeg" style="width:70px;height:70px;object-fit:contain" onerror="this.style.display='none'"/>
+        </div>
+        <!-- Rows 4-6: Subject/Task/Educator — two column layout with divider -->
+        <table style="width:100%;border-collapse:collapse;font-size:11px;font-family:Calibri,Arial">
+          <tr style="border-bottom:1px solid #999">
+            <td style="font-weight:700;padding:4px 8px;width:130px;border-right:1px solid #999"><b>SUBJECT:</b></td>
             <td style="padding:4px 8px">${m.subject}</td>
           </tr>
-          <tr style="border-bottom:1px solid #ddd">
-            <td style="font-weight:700;padding:4px 8px;border-right:1px solid #ddd">TASK:</td>
+          <tr style="border-bottom:1px solid #999">
+            <td style="font-weight:700;padding:4px 8px;border-right:1px solid #999"><b>TASK:</b></td>
             <td style="padding:4px 8px">${m.task}</td>
           </tr>
-          <tr style="border-bottom:1px solid #999">
-            <td style="font-weight:700;padding:4px 8px;border-right:1px solid #ddd">EDUCATOR:</td>
+          <tr>
+            <td style="font-weight:700;padding:4px 8px;border-right:1px solid #999"><b>EDUCATOR:</b></td>
             <td style="padding:4px 8px">${m.educator}</td>
           </tr>
-          <!-- DATE then GRADE below it -->
-          <tr style="border-bottom:1px solid #ddd">
-            <td style="font-weight:700;padding:4px 8px;border-right:1px solid #ddd">DATE:</td>
-            <td style="padding:4px 8px">${m.date}</td>
-          </tr>
-          <tr>
-            <td style="font-weight:700;padding:4px 8px;border-right:1px solid #ddd">GRADE:</td>
-            <td style="padding:4px 8px">${m.grade}</td>
-          </tr>
         </table>
+        <!-- Date/Grade in separate bordered box below -->
+        <div style="margin-top:10px;display:inline-block;border:1px solid #999;margin-left:0">
+          <table style="border-collapse:collapse;font-size:11px;font-family:Calibri,Arial">
+            <tr style="border-bottom:1px solid #999">
+              <td style="font-weight:700;padding:3px 8px;border-right:1px solid #999;width:70px"><b>DATE:</b></td>
+              <td style="padding:3px 12px;font-weight:700;min-width:80px">${m.date}</td>
+            </tr>
+            <tr>
+              <td style="font-weight:700;padding:3px 8px;border-right:1px solid #999"><b>GRADE:</b></td>
+              <td style="padding:3px 12px;font-weight:700;text-align:center">${m.grade}</td>
+            </tr>
+          </table>
+        </div>
       </div>
 
-      <!-- RIGHT BLOCK: Level/Candidates -->
-      <div style="min-width:180px">
-        <table style="width:100%;border-collapse:collapse;font-size:12px">
+      <!-- RIGHT: Level/Candidates table -->
+      <div style="min-width:200px;flex-shrink:0">
+        <table style="width:100%;border-collapse:collapse;font-size:11px;font-family:Calibri,Arial">
           <tr>
-            <th style="background:#375623;color:white;padding:5px 10px;text-align:center;border:1px solid #999;font-size:11px">LEVEL</th>
-            <th style="background:#375623;color:white;padding:5px 10px;text-align:center;border:1px solid #999;font-size:11px">TOTAL CANDIDATES</th>
+            <th style="background:#375623;color:white;padding:5px 12px;text-align:center;border:1px solid #375623;font-weight:700">LEVEL</th>
+            <th style="background:#375623;color:white;padding:5px 12px;text-align:center;border:1px solid #375623;font-weight:700">TOTAL CANDIDATES</th>
           </tr>
           ${[1,2,3,4,5,6,7,8].map((l,i)=>`
           <tr>
-            <td style="text-align:center;border:1px solid #ccc;padding:4px 10px">${l}</td>
-            <td style="text-align:center;border:1px solid #ccc;padding:4px 10px">${lvlCounts[i]||0}</td>
+            <td style="text-align:center;border:1px solid #ccc;padding:4px 12px;font-weight:700">${l}</td>
+            <td style="text-align:center;border:1px solid #ccc;padding:4px 12px;font-weight:700">${lvlCounts[i]||0}</td>
           </tr>`).join('')}
           <tr>
-            <td style="border:1px solid #ccc;padding:4px 10px"></td>
-            <td style="text-align:center;border:1px solid #ccc;padding:4px 10px;font-weight:700">${written.length}</td>
+            <td style="border:1px solid #ccc;padding:4px 12px"></td>
+            <td style="text-align:center;border:1px solid #ccc;padding:4px 12px;font-weight:700">${written.length}</td>
           </tr>
         </table>
       </div>
@@ -514,19 +520,17 @@ function renderSummary(){
 
     <!-- MAIN MARKS TABLE -->
     <div style="overflow-x:auto;margin-bottom:16px">
-      <table style="width:100%;border-collapse:collapse;font-size:11px;table-layout:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:11px;font-family:Calibri,Arial">
         <thead>
-          <!-- Q numbers row -->
           <tr>
-            <th style="border:1px solid #999;padding:5px 8px;background:#d6e4bc;text-align:center;font-size:11px;min-width:140px">QUESTION</th>
-            ${Array.from({length:10},(_,i)=>`<th style="border:1px solid #999;padding:5px 4px;background:#d6e4bc;text-align:center;font-size:11px;min-width:36px">${i+1}</th>`).join('')}
-            <th style="border:1px solid #999;padding:5px 4px;background:#d6e4bc;text-align:center;font-size:11px">TOTAL</th>
-            <th style="border:1px solid #999;padding:5px 4px;background:#d6e4bc;text-align:center;font-size:11px">%</th>
-            <th style="border:1px solid #999;padding:5px 4px;background:#d6e4bc;text-align:center;font-size:11px">LEVEL</th>
+            <th style="border:1px solid #999;padding:5px 8px;background:#d6e4bc;text-align:center;min-width:140px">QUESTION</th>
+            ${Array.from({length:10},(_,i)=>`<th style="border:1px solid #999;padding:5px 4px;background:#d6e4bc;text-align:center;min-width:36px">${i+1}</th>`).join('')}
+            <th style="border:1px solid #999;padding:5px 4px;background:#d6e4bc;text-align:center">TOTAL</th>
+            <th style="border:1px solid #999;padding:5px 4px;background:#d6e4bc;text-align:center">%</th>
+            <th style="border:1px solid #999;padding:5px 4px;background:#d6e4bc;text-align:center">LEVEL</th>
           </tr>
-          <!-- Rotated topic names -->
           <tr>
-            <th style="border:1px solid #999;padding:4px 8px;background:#d6e4bc;text-align:center;font-size:11px">TOPIC</th>
+            <th style="border:1px solid #999;padding:4px 8px;background:#d6e4bc;text-align:center">TOPIC</th>
             ${Array.from({length:10},(_,i)=>{
               const q=questions[i];
               return`<th style="border:1px solid #999;background:#d6e4bc;padding:3px;text-align:center;height:100px;vertical-align:bottom">
@@ -537,14 +541,13 @@ function renderSummary(){
             <th style="border:1px solid #999;background:#d6e4bc;padding:4px"></th>
             <th style="border:1px solid #999;background:#d6e4bc;padding:4px"></th>
           </tr>
-          <!-- Marks per question -->
           <tr>
-            <th style="border:1px solid #999;padding:5px 8px;background:#c6d9a0;text-align:center;font-size:11px;font-weight:700">MARKS PER QUESTION</th>
+            <th style="border:1px solid #999;padding:5px 8px;background:#c6d9a0;text-align:center;font-weight:700;color:#375623">MARKS PER QUESTION</th>
             ${Array.from({length:10},(_,i)=>{
               const q=questions[i];
-              return`<th style="border:1px solid #999;padding:5px 4px;background:#c6d9a0;text-align:center;font-weight:700;font-size:11px">${q?q.max:''}</th>`;
+              return`<th style="border:1px solid #999;padding:5px 4px;background:#c6d9a0;text-align:center;font-weight:700;color:#375623">${q?q.max:''}</th>`;
             }).join('')}
-            <th style="border:1px solid #999;padding:5px 4px;background:#c6d9a0;text-align:center;font-weight:700;font-size:11px">${mx}</th>
+            <th style="border:1px solid #999;padding:5px 4px;background:#c6d9a0;text-align:center;font-weight:700;color:#375623">${mx}</th>
             <th style="border:1px solid #999;background:#c6d9a0;padding:5px"></th>
             <th style="border:1px solid #999;background:#c6d9a0;padding:5px"></th>
           </tr>
@@ -567,7 +570,6 @@ function renderSummary(){
               <td style="border:1px solid #ccc;padding:3px 4px;text-align:center"><span class="lb ${lv.cls}">${lv.label}</span></td>
             </tr>`;
           }).join('')}
-          <!-- AVERAGE ROW -->
           <tr style="border-top:2px solid #375623">
             <td style="border:1px solid #999;padding:5px 8px;font-weight:700;background:#d6e4bc;text-align:center">AVERAGE %</td>
             ${Array.from({length:10},(_,i)=>{
@@ -583,22 +585,20 @@ function renderSummary(){
     </div>
 
     <!-- BAR CHART -->
-    <div style="border:1px solid #999;padding:10px 10px 0 10px">
-      <div style="text-align:center;font-size:12px;font-weight:700;background:#1a1a18;color:white;padding:5px;margin-bottom:8px;letter-spacing:1px">AVERAGE % PER QUESTION</div>
+    <div style="border:1px solid #999;padding:10px 10px 4px 10px">
+      <div style="text-align:center;font-size:12px;font-weight:700;background:#1a1a18;color:white;padding:5px;margin-bottom:8px;letter-spacing:1px;font-family:Calibri,Arial">AVERAGE % PER QUESTION</div>
       <div style="display:flex;align-items:center">
-        <!-- Y-axis label centred vertically -->
-        <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px;color:#555;font-family:Arial;text-align:center;white-space:nowrap;margin-right:2px">PERCENTAGE(%)</div>
+        <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px;color:#555;font-family:Calibri,Arial;text-align:center;white-space:nowrap;margin-right:2px">PERCENTAGE(%)</div>
         <div style="flex:1">
           <svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 ${svgW} ${svgH}" style="display:block;overflow:visible">
             <defs>${defs}</defs>
             <g transform="translate(0,6)">
-              ${gridLines}
-              ${barsSvg}
+              ${gridLines}${barsSvg}
               <line x1="${svgPadL}" y1="0" x2="${svgPadL}" y2="${chartH}" stroke="#999" stroke-width="1"/>
               <line x1="${svgPadL}" y1="${chartH}" x2="${svgW}" y2="${chartH}" stroke="#999" stroke-width="1"/>
             </g>
           </svg>
-          <div style="text-align:center;font-size:10px;color:#555;font-family:Arial;margin-top:2px;padding-left:${svgPadL}px">QUESTION</div>
+          <div style="text-align:center;font-size:10px;color:#555;font-family:Calibri,Arial;padding-left:${svgPadL}px;margin-top:2px">QUESTION</div>
         </div>
       </div>
     </div>
