@@ -362,11 +362,13 @@ function removeQuestion(i){
 function renderTable(){
   const mx=getMax();
   document.getElementById('mark-thead').innerHTML=`<tr>
-    <th style="width:28px">#</th>
-    <th class="left" style="min-width:170px">Learner</th>
-    ${questions.map((q,i)=>`<th title="${q.topic}">${q.label}<br><span style="font-size:9px;opacity:0.7">(${q.max})</span></th>`).join('')}
-    <th>Total<br><span style="font-size:9px;opacity:0.7">(${mx})</span></th>
-    <th>%</th><th>Lvl</th></tr>`;
+    <th style="width:28px;font-size:12px;font-weight:700">#</th>
+    <th class="left" style="min-width:170px;font-size:12px;font-weight:700">Learner</th>
+    ${questions.map((q,i)=>`<th title="${q.topic}" style="font-size:12px;font-weight:700">${q.label}<br><span style="font-size:9px;font-weight:400;opacity:0.8">(${q.max})</span></th>`).join('')}
+    <th style="font-size:12px;font-weight:700">Total<br><span style="font-size:9px;font-weight:400;opacity:0.8">(${mx})</span></th>
+    <th style="font-size:12px;font-weight:700">%</th>
+    <th style="font-size:12px;font-weight:700">Lvl</th>
+    <th style="width:28px;font-size:12px;font-weight:700"></th></tr>`;
   document.getElementById('mark-tbody').innerHTML=students.map((s,si)=>{
     const tot=getTotal(s.marks),pct=getPct(s.marks),lv=getLevel(pct),ab=isAbsent(s.marks);
     return`<tr id="row-${si}" class="${ab?'absent':''}">
@@ -375,7 +377,8 @@ function renderTable(){
       ${questions.map((q,qi)=>`<td><input class="mi" type="number" min="0" max="${q.max}" value="${s.marks[qi]??0}" onchange="updateMark(${si},${qi},this.value)" onkeydown="navigateMark(event,${si},${qi})"/></td>`).join('')}
       <td id="tot-${si}" class="tc" style="background:${ab?'':'#fffff0'}">${ab?'—':tot}</td>
       <td id="pct-${si}" class="pc" style="background:${ab?'':'#fffff0'};color:${ab?'inherit':'#1a4d25'};font-weight:600">${ab?'—':pct+'%'}</td>
-      <td id="lvl-${si}"><span class="lb ${lv.cls}">${ab?'ABS':lv.label}</span></td></tr>`;
+      <td id="lvl-${si}"><span class="lb ${lv.cls}">${ab?'ABS':lv.label}</span></td>
+      <td style="text-align:center;padding:2px;border-bottom:1px solid var(--paper3)"><button onclick="deleteStudent(${si})" style="background:none;border:none;color:#c0392b;cursor:pointer;font-size:14px;font-weight:700;padding:2px 5px;border-radius:3px;line-height:1" title="Remove learner">✕</button></td></tr>\``;
   }).join('');
 }
 
@@ -403,6 +406,13 @@ function updateMark(si,qi,val){
 }
 
 function addStudent(){students.push({name:'',marks:questions.map(()=>0)});renderTable();}
+function deleteStudent(si){
+  if(students.length<=1){alert('You need at least one learner.');return;}
+  students.splice(si,1);
+  window._spipRendered=false;
+  window._fnRendered=false;
+  renderTable();
+}
 
 // ── ITEM ANALYSIS ──────────────────────────────────────────────────────────
 function renderSummary(){
