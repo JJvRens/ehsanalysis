@@ -407,9 +407,9 @@ function addStudent(){students.push({name:'',marks:questions.map(()=>0)});render
 // ── ITEM ANALYSIS ──────────────────────────────────────────────────────────
 function renderSummary(){
   const mx=getMax();
-  const real=students.filter(s=>s.name.trim());
-  const written=real.filter(s=>!isAbsent(s.marks));
-  const absent=real.length-written.length;
+  const real=students.filter(s=>s.name.trim()&&!isAbsent(s.marks));
+  const written=real;
+  const absent=students.filter(s=>s.name.trim()&&isAbsent(s.marks)).length;
   const pcts=written.map(s=>getPct(s.marks));
   const classAvg=written.length?Math.round(pcts.reduce((a,b)=>a+b,0)/written.length):0;
   const lvlCounts=[0,0,0,0,0,0,0,0];
@@ -572,7 +572,7 @@ function renderSpip(){
     return{q,qi,avg:Math.round(a*10)/10,pct:q.max?Math.round(a/q.max*100):0};
   });
   const weakest=[...qStats].sort((a,b)=>a.pct-b.pct).slice(0,2);
-  const atRiskCount=students.filter(s=>s.name.trim()&&!isAbsent(s.marks)&&getPct(s.marks)<50).length;
+  const atRiskCount=students.filter(s=>s.name.trim()&&!isAbsent(s.marks)&&getPct(s.marks)<50&&getPct(s.marks)>0).length;
 
   // Store data by index so onclick doesn't pass strings with special chars
   weakest.forEach((item,i)=>{
@@ -726,7 +726,7 @@ function renderFortnightly(){
   const m=getMeta();
   const streamCodes={BCM:'1',Sciences:'2',Languages:'3',Humanities:'4',Technical:'5'};
   const sc=streamCodes[m.stream]||'1';
-  const real=students.filter(s=>s.name.trim());
+  const real=students.filter(s=>s.name.trim()&&!isAbsent(s.marks));
   const subj=m.subject.includes('Computer')?'CAT':m.subject.slice(0,6);
   const lvlR=[
     {label:'L1',sub:'0-29',min:0,max:29},{label:'L2',sub:'30-39',min:30,max:39},
