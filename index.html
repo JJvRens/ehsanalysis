@@ -1557,36 +1557,27 @@ function printAllReports(){
 ');
 
     const win=window.open('','_blank');
-    win.document.write(`<!DOCTYPE html><html><head>
-      <meta charset="UTF-8"/>
-      <title>All Reports</title>
-      <style>
-        ${styles}
-        body{font-family:Arial,sans-serif;background:white;margin:0;padding:0;}
-        .report-section{padding:20px;page-break-after:always;}
-        .report-section:last-child{page-break-after:auto;}
-        .report-title{font-size:13px;font-weight:700;color:#1a4d25;text-transform:uppercase;
-          letter-spacing:0.06em;border-bottom:2px solid #1a4d25;padding-bottom:4px;margin-bottom:16px;}
-        @media print{
-          *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
-          @page{margin:1cm;}
-          .report-section{padding:0;margin:0;}
-        }
-      </style>
-    </head><body>
-      <div class="report-section">
-        <div class="report-title">Item Analysis / Diagnostic Tool</div>
-        ${summary}
-      </div>
-      <div class="report-section">
-        <div class="report-title">Subject Performance Improvement Plan (SPIP)</div>
-        ${spip}
-      </div>
-      <div class="report-section">
-        <div class="report-title">Fortnightly Report</div>
-        ${fn}
-      </div>
-    </body></html>`);
+    const html='<!DOCTYPE html><html><head>'
+      +'<meta charset="UTF-8"/>'
+      +'<title>All Reports</title>'
+      +'<style>'
+      +styles
+      +'body{font-family:Arial,sans-serif;background:white;margin:0;padding:20px;}'
+      +'.report-section{page-break-after:always;margin-bottom:0;}'
+      +'.report-section:last-child{page-break-after:auto;}'
+      +'.report-title{font-size:13px;font-weight:700;color:#1a4d25;text-transform:uppercase;'
+      +'letter-spacing:0.06em;border-bottom:2px solid #1a4d25;padding-bottom:4px;margin-bottom:16px;}'
+      +'@media print{'
+      +'*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}'
+      +'@page{margin:1cm;}'
+      +'}'
+      +'</style>'
+      +'</head><body>'
+      +'<div class="report-section"><div class="report-title">Item Analysis / Diagnostic Tool</div>'+summary+'</div>'
+      +'<div class="report-section"><div class="report-title">Subject Performance Improvement Plan (SPIP)</div>'+spip+'</div>'
+      +'<div class="report-section"><div class="report-title">Fortnightly Report</div>'+fn+'</div>'
+      +'</body></html>';
+    win.document.write(html);
     win.document.close();
     setTimeout(()=>{win.print();},600);
   },400);
