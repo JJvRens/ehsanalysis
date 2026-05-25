@@ -168,6 +168,7 @@ tr.absent td{opacity:0.4;}
     <button class="nav-tab" onclick="showPage('fortnightly')" id="tab-fortnightly">Fortnightly Report <span class="dot"></span></button>
   </nav>
   <button class="print-btn" onclick="printPage()">⎙ Print</button>
+  <button class="print-btn" onclick="printAllReports()" style="background:#b8860b;margin-left:6px" title="Print Item Analysis + SPIP + Fortnightly as one document">⎙ Print All Reports</button>
 </div>
 
 <!-- MARK ENTRY -->
@@ -1533,6 +1534,62 @@ function focusMarkCell(si,qi){
     input.focus();
     input.select(); // select all so typing replaces the value immediately
   }
+}
+
+// ── PRINT ALL REPORTS ────────────────────────────────────────────────────────
+function printAllReports(){
+  // Make sure all pages are rendered first
+  renderSummary();
+  if(!window._spipRendered){renderSpip();window._spipRendered=true;}
+  if(!window._fnRendered){renderFortnightly();window._fnRendered=true;}
+
+  setTimeout(()=>{
+    // Grab rendered HTML from each page
+    const summary=document.getElementById('summary-content')?.innerHTML||'';
+    const spip=document.getElementById('spip-render')?.innerHTML||'';
+    const fn=document.getElementById('fortnightly-render')?.innerHTML||'';
+
+    // Get all styles from the current page
+    const styles=Array.from(document.styleSheets).map(ss=>{
+      try{return Array.from(ss.cssRules).map(r=>r.cssText).join('
+');}catch{return '';}
+    }).join('
+');
+
+    const win=window.open('','_blank');
+    win.document.write(`<!DOCTYPE html><html><head>
+      <meta charset="UTF-8"/>
+      <title>All Reports</title>
+      <style>
+        ${styles}
+        body{font-family:Arial,sans-serif;background:white;margin:0;padding:0;}
+        .report-section{padding:20px;page-break-after:always;}
+        .report-section:last-child{page-break-after:auto;}
+        .report-title{font-size:13px;font-weight:700;color:#1a4d25;text-transform:uppercase;
+          letter-spacing:0.06em;border-bottom:2px solid #1a4d25;padding-bottom:4px;margin-bottom:16px;}
+        @media print{
+          *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+          @page{margin:1cm;}
+          .report-section{padding:0;margin:0;}
+        }
+      </style>
+    </head><body>
+      <div class="report-section">
+        <div class="report-title">Item Analysis / Diagnostic Tool</div>
+        ${summary}
+      </div>
+      <div class="report-section">
+        <div class="report-title">Subject Performance Improvement Plan (SPIP)</div>
+        ${spip}
+      </div>
+      <div class="report-section">
+        <div class="report-title">Fortnightly Report</div>
+        ${fn}
+      </div>
+    </body></html>`);
+    win.document.close();
+    setTimeout(()=>{win.print();},600);
+  },400);
 }
 
 // ── FORGOT PASSWORD ────────────────────────────────────────────────────────
