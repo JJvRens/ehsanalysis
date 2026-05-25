@@ -1075,6 +1075,8 @@ async function saveAnalysis(){
       teacher_id:currentUser.id,
       task:m.task||'Untitled',
       date:m.date||new Date().toISOString().slice(0,10),
+      subject:m.subject||'',
+      grade:m.grade||'',
       circuit:m.circuit||'',
       stream:m.stream||'',
       target:m.target||'50',
@@ -1144,12 +1146,15 @@ async function loadAnalysis(id){
   // Clear the SPIP render so old content is gone immediately
   const spipRender=document.getElementById('spip-render');
   if(spipRender)spipRender.innerHTML='';
-  // Restore meta fields
-  if(a.task)document.getElementById('f-task').value=a.task;
-  if(a.date)document.getElementById('f-date').value=a.date;
-  if(a.circuit)document.getElementById('f-circuit').value=a.circuit;
-  if(a.stream)document.getElementById('f-stream').value=a.stream;
-  if(a.target)document.getElementById('f-target').value=a.target;
+  // Restore ALL meta fields from the analysis
+  const setField=(id,val)=>{const el=document.getElementById(id);if(el&&val!==undefined&&val!==null)el.value=val;};
+  setField('f-task',a.task);
+  setField('f-date',a.date);
+  setField('f-circuit',a.circuit);
+  setField('f-stream',a.stream);
+  setField('f-target',a.target);
+  setField('f-subject',a.subject);
+  setField('f-grade',a.grade);
   updateMeta();renderQConfig();
   showPage('entry');
   document.getElementById('save-btn').textContent='💾 Save';
