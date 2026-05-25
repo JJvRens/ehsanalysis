@@ -584,8 +584,38 @@ function renderSummary(){
       </table>
     </div>
 
+    <!-- QUESTION/AVERAGE TABLE above chart -->
+    <div style="overflow-x:auto;margin-bottom:0">
+      <table style="width:100%;border-collapse:collapse;font-size:11px;font-family:Calibri,Arial;margin-bottom:0">
+        <thead>
+          <tr>
+            <th style="border:1px solid #999;background:#bdd7ee;text-align:center;padding:3px;height:110px;vertical-align:bottom;min-width:60px">
+              <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:11px;font-weight:700">QUESTION</div>
+            </th>
+            ${Array.from({length:10},(_,i)=>{
+              const q=questions[i];
+              return`<th style="border:1px solid #999;background:#d6e4bc;padding:3px;text-align:center;height:110px;vertical-align:bottom;min-width:44px">
+                ${q?`<div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px;font-weight:500;line-height:1.2;max-height:105px">${q.topic}</div>`:'<div style="height:105px"></div>'}
+              </th>`;
+            }).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="border:1px solid #999;background:#bdd7ee;text-align:center;padding:4px;vertical-align:middle">
+              <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:11px;font-weight:700">AVERAGE %</div>
+            </td>
+            ${Array.from({length:10},(_,i)=>{
+              const item=qAvgs[i];
+              return`<td style="border:1px solid #999;padding:6px 4px;text-align:center;font-weight:700;font-size:13px;font-family:Calibri,Arial">${item?item.pct:''}</td>`;
+            }).join('')}
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
     <!-- BAR CHART -->
-    <div style="border:1px solid #999;padding:10px 10px 4px 10px">
+    <div style="border:1px solid #999;border-top:none;padding:10px 10px 4px 10px">
       <div style="text-align:center;font-size:12px;font-weight:700;background:#1a1a18;color:white;padding:5px;margin-bottom:8px;letter-spacing:1px;font-family:Calibri,Arial">AVERAGE % PER QUESTION</div>
       <div style="display:flex;align-items:center">
         <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px;color:#555;font-family:Calibri,Arial;text-align:center;white-space:nowrap;margin-right:2px">PERCENTAGE(%)</div>
