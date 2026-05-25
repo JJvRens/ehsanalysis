@@ -421,141 +421,202 @@ function renderSummary(){
   });
   const m=getMeta();
 
-  // SVG bar chart — inline SVG so it prints correctly
-  const barW=44,gap=12,chartH=150,svgPadL=30,svgPadB=30;
-  const svgW=svgPadL+(barW+gap)*questions.length+gap;
-  const svgH=chartH+svgPadB+10;
-  const gridVals=[0,20,40,60,80,100];
+  // SVG bar chart matching PDF style
+  const barW=44,gap=12,chartH=200,svgPadL=40,svgPadB=36;
+  const totalBars=10; // always show 10 bars like Excel
+  const svgW=svgPadL+(barW+gap)*totalBars+gap+20;
+  const svgH=chartH+svgPadB+20;
+  const gridVals=[0,10,20,30,40,50,60,70,80,90];
   const gridLines=gridVals.map(v=>{
-    const y=chartH-Math.round(v/100*chartH);
-    return`<line x1="${svgPadL}" y1="${y}" x2="${svgW}" y2="${y}" stroke="#ddd" stroke-width="1"/>
-    <text x="${svgPadL-4}" y="${y+3}" text-anchor="end" font-size="9" fill="#999" font-family="Arial">${v}</text>`;
+    const y=chartH-Math.round(v/90*chartH);
+    return`<line x1="${svgPadL}" y1="${y}" x2="${svgW-10}" y2="${y}" stroke="#e0e0e0" stroke-width="1"/>
+    <text x="${svgPadL-5}" y="${y+4}" text-anchor="end" font-size="10" fill="#666" font-family="Arial">${v}</text>`;
   }).join('');
-  const bars=qAvgs.map((item,i)=>{
-    const bh=Math.max(2,Math.round(item.pct/100*chartH));
+  // Draw 10 bars (questions + empty ones)
+  const bars=Array.from({length:10},(_,i)=>{
+    const item=qAvgs[i];
     const x=svgPadL+gap+i*(barW+gap);
+    if(!item||item.pct===0){
+      return`<text x="${x+barW/2}" y="${chartH+16}" text-anchor="middle" font-size="11" fill="#555" font-family="Arial">${i+1}</text>
+      <text x="${x+barW/2}" y="${chartH-4}" text-anchor="middle" font-size="10" font-weight="700" fill="#666" font-family="Arial">0</text>`;
+    }
+    const bh=Math.max(4,Math.round(item.pct/90*chartH));
     const y=chartH-bh;
-    const col=item.pct>=60?'#2e7d42':item.pct>=40?'#b8860b':'#8b2020';
-    return`<rect x="${x}" y="${y}" width="${barW}" height="${bh}" fill="${col}"/>
-    <text x="${x+barW/2}" y="${y-4}" text-anchor="middle" font-size="10" font-weight="700" fill="${col}" font-family="Arial">${item.pct}</text>
-    <text x="${x+barW/2}" y="${chartH+16}" text-anchor="middle" font-size="10" fill="#555" font-family="Arial">${i+1}</text>`;
+    // Crosshatch pattern like PDF
+    return`<defs><pattern id="hatch${i}" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="6" stroke="#555" stroke-width="2.5"/>
+    </pattern></defs>
+    <rect x="${x}" y="${y}" width="${barW}" height="${bh}" fill="url(#hatch${i})" stroke="#333" stroke-width="0.5"/>
+    <text x="${x+barW/2}" y="${y-4}" text-anchor="middle" font-size="11" font-weight="700" fill="#222" font-family="Arial">${item.pct}</text>
+    <text x="${x+barW/2}" y="${chartH+16}" text-anchor="middle" font-size="11" fill="#555" font-family="Arial">${i+1}</text>`;
   }).join('');
 
   document.getElementById('summary-content').innerHTML=`
-  <div style="background:white;border:1px solid var(--border);border-radius:4px;overflow:hidden;font-family:Arial,sans-serif">
+  <div style="background:white;font-family:Arial,sans-serif;font-size:12px;max-width:960px">
 
-    <!-- HEADER: meta + logo -->
-    <div style="display:grid;grid-template-columns:1fr 90px;border-bottom:2px solid var(--green-dark)">
-      <div style="padding:10px 14px">
-        <div style="display:grid;grid-template-columns:80px 1fr 80px 1fr;gap:3px;font-size:12px;margin-bottom:4px">
-          <span><b>TASK:</b></span><span>${m.task}</span><span><b>DATE:</b></span><span>${m.date}</span>
-          <span><b>SUBJECT:</b></span><span colspan="3">${m.subject}</span>
-          <span><b>GRADE:</b></span><span>${m.grade}</span><span><b>EDUCATOR:</b></span><span>${m.educator}</span>
+    <!-- TOP SECTION: header + level table side by side -->
+    <div style="display:grid;grid-template-columns:1fr auto;gap:0;border:1px solid #999;margin-bottom:12px">
+
+      <!-- LEFT: ITEM ANALYSIS header block -->
+      <div style="border-right:1px solid #999">
+        <!-- Title row -->
+        <div style="display:grid;grid-template-columns:1fr auto;border-bottom:1px solid #999">
+          <div style="text-align:center;padding:6px;border-right:1px solid #999">
+            <div style="font-weight:700;font-size:13px;letter-spacing:0.5px">ITEM ANALYSIS/DIAGNOSTIC TOOL</div>
+            <div style="font-weight:700;font-size:14px;margin-top:2px">${m.school.toUpperCase()}</div>
+          </div>
+          <div style="padding:6px;display:flex;align-items:center;justify-content:center;min-width:80px">
+            <img src="wapen.jpeg" style="width:60px;height:60px;object-fit:contain" onerror="this.style.display='none'"/>
+          </div>
         </div>
-        <div style="text-align:center;font-size:16px;font-weight:700;letter-spacing:1px;padding:6px 0 2px">${m.school.toUpperCase()}</div>
-        <div style="text-align:center;font-size:11px;font-weight:700;color:#555;letter-spacing:0.5px">ITEM ANALYSIS / DIAGNOSTIC TOOL</div>
-      </div>
-      <div style="border-left:2px solid var(--green-dark);display:flex;align-items:center;justify-content:center;padding:6px">
-        <img src="wapen.jpeg" style="width:72px;height:72px;object-fit:contain" onerror="this.style.display='none'"/>
-      </div>
-    </div>
-
-    <!-- LEVEL CANDIDATES + SUBJECT INFO -->
-    <div style="display:grid;grid-template-columns:1fr 180px;border-bottom:1px solid var(--border)">
-      <div style="padding:10px 14px;font-size:12px;border-right:1px solid var(--border)">
-        <div style="margin-bottom:4px"><b>SUBJECT:</b> ${m.subject}</div>
-        <div style="margin-bottom:4px"><b>TASK:</b> ${m.task}</div>
-        <div style="margin-bottom:4px"><b>EDUCATOR:</b> ${m.educator}</div>
-        <div style="margin-bottom:4px"><b>DATE:</b> ${m.date}</div>
-        <div><b>GRADE:</b> ${m.grade}</div>
-      </div>
-      <div>
-        <table style="width:100%;border-collapse:collapse;font-size:11px">
-          <tr>
-            <th style="background:var(--green-dark);color:white;padding:4px 8px;font-size:10px;text-align:center">LEVEL</th>
-            <th style="background:var(--green-dark);color:white;padding:4px 8px;font-size:10px;text-align:center">TOTAL CANDIDATES</th>
+        <!-- Subject/Task/Educator rows -->
+        <table style="width:100%;border-collapse:collapse;font-size:12px">
+          <tr style="border-bottom:1px solid #ddd">
+            <td style="font-weight:700;padding:4px 8px;width:90px;border-right:1px solid #ddd">SUBJECT:</td>
+            <td style="padding:4px 8px">${m.subject}</td>
           </tr>
-          ${[1,2,3,4,5,6,7,8].map(l=>`
+          <tr style="border-bottom:1px solid #ddd">
+            <td style="font-weight:700;padding:4px 8px;border-right:1px solid #ddd">TASK:</td>
+            <td style="padding:4px 8px">${m.task}</td>
+          </tr>
           <tr>
-            <td style="text-align:center;border:1px solid var(--border);padding:2px 8px">${l}</td>
-            <td style="text-align:center;border:1px solid var(--border);padding:2px 8px">${lvlCounts[l-1]||0}</td>
+            <td style="font-weight:700;padding:4px 8px;border-right:1px solid #ddd">EDUCATOR:</td>
+            <td style="padding:4px 8px">${m.educator}</td>
+          </tr>
+        </table>
+        <!-- Date/Grade below -->
+        <div style="border-top:1px solid #999;display:grid;grid-template-columns:1fr 1fr">
+          <table style="border-collapse:collapse;font-size:12px">
+            <tr><td style="font-weight:700;padding:4px 8px;border-right:1px solid #ddd">DATE:</td><td style="padding:4px 8px">${m.date}</td></tr>
+          </table>
+          <table style="border-collapse:collapse;font-size:12px">
+            <tr><td style="font-weight:700;padding:4px 8px;border-right:1px solid #ddd">GRADE:</td><td style="padding:4px 8px">${m.grade}</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- RIGHT: Level/Candidates table -->
+      <div style="min-width:160px">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;height:100%">
+          <tr>
+            <th style="background:#375623;color:white;padding:5px 12px;text-align:center;border:1px solid #999">LEVEL</th>
+            <th style="background:#375623;color:white;padding:5px 12px;text-align:center;border:1px solid #999">TOTAL CANDIDATES</th>
+          </tr>
+          ${[1,2,3,4,5,6,7,8].map((l,i)=>`
+          <tr>
+            <td style="text-align:center;border:1px solid #ccc;padding:3px 12px;background:${i%2===0?'white':'#f9f9f9'}">${l}</td>
+            <td style="text-align:center;border:1px solid #ccc;padding:3px 12px;background:${i%2===0?'white':'#f9f9f9'}">${lvlCounts[i]||0}</td>
           </tr>`).join('')}
           <tr>
-            <td style="border:1px solid var(--border);padding:2px 8px;font-weight:700;font-size:10px;text-align:center"></td>
-            <td style="text-align:center;border:1px solid var(--border);padding:2px 8px;font-weight:700">${written.length}</td>
+            <td style="border:1px solid #ccc;padding:3px 12px;background:#f5f5f5"></td>
+            <td style="text-align:center;border:1px solid #ccc;padding:3px 12px;font-weight:700;background:#f5f5f5">${written.length}</td>
           </tr>
         </table>
       </div>
     </div>
 
     <!-- MAIN MARKS TABLE -->
-    <div style="overflow-x:auto">
-      <table style="width:100%;border-collapse:collapse;font-size:11px;font-family:Arial,sans-serif">
+    <div style="overflow-x:auto;margin-bottom:16px">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
         <thead>
-          <!-- Q numbers row -->
+          <!-- Question numbers row -->
           <tr>
-            <th style="border:1px solid #aaa;padding:4px 6px;background:var(--green-light);text-align:left;min-width:150px;font-size:11px">QUESTION</th>
-            ${questions.map((q,i)=>`<th style="border:1px solid #aaa;padding:4px 5px;background:var(--green-light);text-align:center;font-size:11px">${i+1}</th>`).join('')}
-            <th style="border:1px solid #aaa;padding:4px 5px;background:var(--green-light);text-align:center;font-size:11px">TOTAL</th>
-            <th style="border:1px solid #aaa;padding:4px 5px;background:var(--green-light);text-align:center;font-size:11px">%</th>
-            <th style="border:1px solid #aaa;padding:4px 5px;background:var(--green-light);text-align:center;font-size:11px">LEVEL</th>
+            <th style="border:1px solid #999;padding:5px 8px;background:#d6e4bc;text-align:center;font-size:12px">QUESTION</th>
+            ${Array.from({length:10},(_,i)=>`<th style="border:1px solid #999;padding:5px 6px;background:#d6e4bc;text-align:center;font-size:12px">${i+1}</th>`).join('')}
+            <th style="border:1px solid #999;padding:5px 6px;background:#d6e4bc;text-align:center">TOTAL</th>
+            <th style="border:1px solid #999;padding:5px 6px;background:#d6e4bc;text-align:center">%</th>
+            <th style="border:1px solid #999;padding:5px 6px;background:#d6e4bc;text-align:center">LEVEL</th>
           </tr>
-          <!-- Topic names row — rotated -->
+          <!-- Rotated topic names row -->
           <tr>
-            <th style="border:1px solid #aaa;padding:4px 6px;background:var(--green-light);text-align:left;font-size:10px">TOPIC</th>
-            ${questions.map(q=>`<th style="border:1px solid #aaa;background:var(--green-light);padding:3px;text-align:center;height:90px;vertical-align:bottom">
-              <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px;font-weight:500;white-space:normal;line-height:1.2;max-height:85px">${q.topic}</div>
-            </th>`).join('')}
-            <th style="border:1px solid #aaa;background:var(--green-light);padding:4px 5px"></th>
-            <th style="border:1px solid #aaa;background:var(--green-light);padding:4px 5px"></th>
-            <th style="border:1px solid #aaa;background:var(--green-light);padding:4px 5px"></th>
+            <th style="border:1px solid #999;padding:4px 8px;background:#d6e4bc;text-align:left;font-size:11px">TOPIC</th>
+            ${Array.from({length:10},(_,i)=>{
+              const q=questions[i];
+              return`<th style="border:1px solid #999;background:#d6e4bc;padding:3px;text-align:center;height:100px;vertical-align:bottom;width:${q?'auto':'40px'}">
+                ${q?`<div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px;font-weight:500;line-height:1.2;max-height:95px;white-space:normal">${q.topic}</div>`:''}
+              </th>`;
+            }).join('')}
+            <th style="border:1px solid #999;background:#d6e4bc;padding:4px"></th>
+            <th style="border:1px solid #999;background:#d6e4bc;padding:4px"></th>
+            <th style="border:1px solid #999;background:#d6e4bc;padding:4px"></th>
           </tr>
           <!-- Marks per question row -->
           <tr>
-            <th style="border:1px solid #aaa;padding:4px 6px;background:#e8f0bc;text-align:left;font-size:10px;color:#1a4d25">MARKS PER QUESTION</th>
-            ${questions.map(q=>`<th style="border:1px solid #aaa;padding:4px 5px;background:#e8f0bc;text-align:center;font-size:11px;color:#1a4d25">${q.max}</th>`).join('')}
-            <th style="border:1px solid #aaa;padding:4px 5px;background:#e8f0bc;text-align:center;font-size:11px;color:#1a4d25">${mx}</th>
-            <th style="border:1px solid #aaa;background:#e8f0bc"></th>
-            <th style="border:1px solid #aaa;background:#e8f0bc"></th>
+            <th style="border:1px solid #999;padding:5px 8px;background:#e8f0bc;text-align:left;font-size:11px;font-weight:700;color:#375623">MARKS PER QUESTION</th>
+            ${Array.from({length:10},(_,i)=>{
+              const q=questions[i];
+              return`<th style="border:1px solid #999;padding:5px 6px;background:#e8f0bc;text-align:center;font-weight:700;color:#375623">${q?q.max:''}</th>`;
+            }).join('')}
+            <th style="border:1px solid #999;padding:5px 6px;background:#e8f0bc;text-align:center;font-weight:700;color:#375623">${mx}</th>
+            <th style="border:1px solid #999;background:#e8f0bc;padding:5px"></th>
+            <th style="border:1px solid #999;background:#e8f0bc;padding:5px"></th>
           </tr>
         </thead>
         <tbody>
-          ${real.map((s,i)=>{
-            const tot=getTotal(s.marks),pct=getPct(s.marks),lv=getLevel(pct),ab=isAbsent(s.marks);
-            const rowBg=i%2===0?'white':'#f8fcf5';
+          ${written.map((s,i)=>{
+            const tot=getTotal(s.marks);
+            const pct=getPct(s.marks);
+            const lv=getLevel(pct);
+            const rowBg=i%2===0?'white':'#f5f8f0';
             return`<tr style="background:${rowBg}">
-              <td style="border:1px solid #ccc;padding:3px 8px;text-align:left;font-size:11px">${s.name}</td>
-              ${questions.map((q,qi)=>`<td style="border:1px solid #ccc;padding:3px 5px;text-align:center;font-family:'Courier New',monospace">${ab?'':s.marks[qi]||0}</td>`).join('')}
-              <td style="border:1px solid #ccc;padding:3px 5px;text-align:center;font-weight:700;background:#fffff0;font-family:'Courier New',monospace">${ab?'':tot}</td>
-              <td style="border:1px solid #ccc;padding:3px 5px;text-align:center;font-weight:700;background:${ab?rowBg:'#fffde0'};color:${ab?'inherit':'#1a4d25'};font-family:'Courier New',monospace">${ab?'':pct}</td>
-              <td style="border:1px solid #ccc;padding:3px 5px;text-align:center"><span class="lb ${lv.cls}">${ab?'ABS':lv.label}</span></td>
+              <td style="border:1px solid #ccc;padding:3px 8px;text-align:left">${s.name}</td>
+              ${Array.from({length:10},(_,qi)=>{
+                const q=questions[qi];
+                const val=q?(s.marks[qi]!==undefined?s.marks[qi]:''):'';
+                return`<td style="border:1px solid #ccc;padding:3px 6px;text-align:center;font-family:'Courier New',monospace">${val}</td>`;
+              }).join('')}
+              <td style="border:1px solid #ccc;padding:3px 6px;text-align:center;font-weight:700;background:#fffff0;font-family:'Courier New',monospace">${tot}</td>
+              <td style="border:1px solid #ccc;padding:3px 6px;text-align:center;font-weight:700;background:#fffde0;color:#375623;font-family:'Courier New',monospace">${pct}</td>
+              <td style="border:1px solid #ccc;padding:3px 6px;text-align:center"><span class="lb ${lv.cls}">${lv.label}</span></td>
             </tr>`;
           }).join('')}
           <!-- AVERAGE ROW -->
           <tr>
-            <td style="border:1px solid #aaa;padding:4px 8px;text-align:left;font-weight:700;background:var(--green-pale);font-size:11px;border-top:2px solid var(--green-dark)">AVERAGE %</td>
-            ${qAvgs.map(item=>`<td style="border:1px solid #aaa;padding:4px 5px;text-align:center;font-weight:700;background:var(--green-pale);color:#1a4d25;font-family:'Courier New',monospace;border-top:2px solid var(--green-dark)">${item.pct}</td>`).join('')}
-            <td style="border:1px solid #aaa;border-top:2px solid var(--green-dark);background:var(--green-pale)"></td>
-            <td style="border:1px solid #aaa;padding:4px 5px;text-align:center;font-weight:700;background:var(--green-pale);color:#1a4d25;font-family:'Courier New',monospace;border-top:2px solid var(--green-dark)">${classAvg}</td>
-            <td style="border:1px solid #aaa;border-top:2px solid var(--green-dark);background:var(--green-pale)"></td>
+            <td style="border:1px solid #999;padding:4px 8px;font-weight:700;background:#d6e4bc;border-top:2px solid #375623">AVERAGE %</td>
+            ${Array.from({length:10},(_,i)=>{
+              const item=qAvgs[i];
+              return`<td style="border:1px solid #999;padding:4px 6px;text-align:center;font-weight:700;background:#d6e4bc;color:#375623;font-family:'Courier New',monospace;border-top:2px solid #375623">${item?item.pct:''}</td>`;
+            }).join('')}
+            <td style="border:1px solid #999;border-top:2px solid #375623;background:#d6e4bc"></td>
+            <td style="border:1px solid #999;padding:4px 6px;text-align:center;font-weight:700;background:#d6e4bc;color:#375623;font-family:'Courier New',monospace;border-top:2px solid #375623">${classAvg}</td>
+            <td style="border:1px solid #999;border-top:2px solid #375623;background:#d6e4bc"></td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <!-- BAR CHART — inline SVG prints correctly -->
-    <div style="padding:12px 14px;border-top:1px solid var(--border)">
-      <div style="text-align:center;font-size:11px;font-weight:700;background:var(--ink);color:white;padding:4px;margin-bottom:8px;letter-spacing:1px;font-family:Arial">AVERAGE % PER QUESTION</div>
-      <svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 ${svgW} ${svgH}" style="display:block;max-width:${svgW}px;margin:0 auto;overflow:visible">
-        <g transform="translate(0,5)">
-          ${gridLines}
-          ${bars}
-          <line x1="${svgPadL}" y1="0" x2="${svgPadL}" y2="${chartH}" stroke="#ccc" stroke-width="1"/>
-          <line x1="${svgPadL}" y1="${chartH}" x2="${svgW}" y2="${chartH}" stroke="#ccc" stroke-width="1"/>
-          <text transform="translate(12,${chartH/2}) rotate(-90)" text-anchor="middle" font-size="9" fill="#777" font-family="Arial">PERCENTAGE (%)</text>
-          <text x="${(svgW+svgPadL)/2}" y="${chartH+svgPadB+2}" text-anchor="middle" font-size="9" fill="#777" font-family="Arial">QUESTION</text>
-        </g>
-      </svg>
+    <!-- BAR CHART matching PDF crosshatch style -->
+    <div style="border:1px solid #999;padding:10px">
+      <div style="text-align:center;font-size:12px;font-weight:700;background:#1a1a18;color:white;padding:5px;margin-bottom:10px;letter-spacing:1px">AVERAGE % PER QUESTION</div>
+      <div style="display:flex;gap:0;align-items:flex-end;margin-bottom:4px">
+        <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px;color:#666;font-family:Arial;padding-right:4px;white-space:nowrap">PERCENTAGE(%)</div>
+        <div style="flex:1;overflow:visible">
+          <svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 ${svgW} ${svgH}" style="display:block;overflow:visible">
+            <defs>
+              ${Array.from({length:10},(_,i)=>`<pattern id="hatch${i}" patternUnits="userSpaceOnUse" width="6" height="6" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="#555" stroke-width="2.5"/></pattern>`).join('')}
+            </defs>
+            <g transform="translate(0,8)">
+              ${gridLines}
+              ${Array.from({length:10},(_,i)=>{
+                const item=qAvgs[i];
+                const x=svgPadL+gap+i*(barW+gap);
+                if(!item||item.pct===0){
+                  return`<text x="${x+barW/2}" y="${chartH+20}" text-anchor="middle" font-size="11" fill="#555" font-family="Arial">${i+1}</text>
+                  <text x="${x+barW/2}" y="${chartH-4}" text-anchor="middle" font-size="10" font-weight="700" fill="#999" font-family="Arial">0</text>`;
+                }
+                const bh=Math.max(4,Math.round(item.pct/90*chartH));
+                const y=chartH-bh;
+                return`<rect x="${x}" y="${y}" width="${barW}" height="${bh}" fill="url(#hatch${i})" stroke="#333" stroke-width="0.5"/>
+                <text x="${x+barW/2}" y="${y-4}" text-anchor="middle" font-size="11" font-weight="700" fill="#222" font-family="Arial">${item.pct}</text>
+                <text x="${x+barW/2}" y="${chartH+20}" text-anchor="middle" font-size="11" fill="#555" font-family="Arial">${i+1}</text>`;
+              }).join('')}
+              <line x1="${svgPadL}" y1="0" x2="${svgPadL}" y2="${chartH}" stroke="#999" stroke-width="1"/>
+              <line x1="${svgPadL}" y1="${chartH}" x2="${svgW-10}" y2="${chartH}" stroke="#999" stroke-width="1"/>
+            </g>
+          </svg>
+        </div>
+      </div>
+      <div style="text-align:center;font-size:11px;color:#666;font-family:Arial;margin-left:${svgPadL}px">QUESTION</div>
     </div>
   </div>`;
 
