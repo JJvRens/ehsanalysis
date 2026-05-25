@@ -156,8 +156,6 @@ tr.absent td{opacity:0.4;}
   .nav-tab{font-size:9px;padding:0 0.5rem;}
 }
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 
@@ -170,7 +168,6 @@ tr.absent td{opacity:0.4;}
     <button class="nav-tab" onclick="showPage('fortnightly')" id="tab-fortnightly">Fortnightly Report <span class="dot"></span></button>
   </nav>
   <button class="print-btn" onclick="printPage()">⎙ Print</button>
-  <button class="print-btn" onclick="downloadAllPDF()" style="background:#b8860b;margin-left:6px">⬇ Download PDF</button>
 </div>
 
 <!-- MARK ENTRY -->
@@ -1536,63 +1533,6 @@ function focusMarkCell(si,qi){
     input.focus();
     input.select(); // select all so typing replaces the value immediately
   }
-}
-
-// ── DOWNLOAD ALL REPORTS AS PDF ─────────────────────────────────────────────
-async function downloadAllPDF(){
-  const btn=document.querySelector('[onclick="downloadAllPDF()"]');
-  btn.textContent='⏳ Generating...';btn.disabled=true;
-
-  // Make sure all 3 pages are rendered
-  renderSummary();
-  renderSpip();
-  renderFortnightly();
-
-  await new Promise(r=>setTimeout(r,800));
-
-  try{
-    const {jsPDF}=window.jspdf;
-    const pdf=new jsPDF('p','mm','a4');
-    const pages=['page-summary','page-spip','page-fortnightly'];
-    const labels=['Item Analysis','SPIP','Fortnightly Report'];
-
-    for(let i=0;i<pages.length;i++){
-      const el=document.getElementById(pages[i]);
-      // Temporarily show the page
-      el.style.display='block';
-      const canvas=await html2canvas(el,{scale:1.5,useCORS:true,backgroundColor:'#ffffff'});
-      el.style.display='none';
-
-      const imgW=210; // A4 width in mm
-      const imgH=canvas.height*imgW/canvas.width;
-      const imgData=canvas.toDataURL('image/jpeg',0.92);
-
-      if(i>0)pdf.addPage();
-      // Add pages, splitting if too long
-      let yPos=0;
-      const pageH=297;
-      while(yPos<imgH){
-        if(yPos>0)pdf.addPage();
-        pdf.addImage(imgData,'JPEG',0,-yPos,imgW,imgH);
-        yPos+=pageH;
-      }
-    }
-
-    // Restore current page display
-    document.querySelectorAll('.page').forEach(p=>p.style.display='');
-    const active=document.querySelector('.page.active');
-    if(active)active.style.display='block';
-
-    const m=getMeta();
-    pdf.save(`${m.school}_${m.task}_Reports.pdf`);
-  }catch(e){
-    console.error('PDF error:',e);
-    alert('PDF generation failed. Try printing instead.');
-    document.querySelectorAll('.page').forEach(p=>p.style.display='');
-    const active=document.querySelector('.page.active');
-    if(active)active.style.display='block';
-  }
-  btn.textContent='⬇ Download PDF';btn.disabled=false;
 }
 
 // ── FORGOT PASSWORD ────────────────────────────────────────────────────────
