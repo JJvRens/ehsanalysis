@@ -156,6 +156,8 @@ tr.absent td{opacity:0.4;}
   .nav-tab{font-size:9px;padding:0 0.5rem;}
 }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
 
@@ -168,6 +170,7 @@ tr.absent td{opacity:0.4;}
     <button class="nav-tab" onclick="showPage('fortnightly')" id="tab-fortnightly">Fortnightly Report <span class="dot"></span></button>
   </nav>
   <button class="print-btn" onclick="printPage()">⎙ Print</button>
+  <button class="print-btn" onclick="downloadAllPDF()" style="background:#b8860b;margin-left:6px">⬇ Download PDF</button>
 </div>
 
 <!-- MARK ENTRY -->
@@ -528,8 +531,59 @@ function renderSummary(){
       </div>
     </div>
 
-    <!-- MAIN MARKS TABLE -->
-    <div style="overflow-x:auto;margin-bottom:16px">
+    <!-- QUESTION/AVERAGE TABLE above chart -->
+    <div style="overflow-x:auto;margin-bottom:0">
+      <table style="width:100%;border-collapse:collapse;font-size:11px;font-family:Calibri,Arial;margin-bottom:0">
+        <thead>
+          <tr>
+            <th style="border:1px solid #999;background:#bdd7ee;text-align:center;padding:3px;height:120px;vertical-align:middle;min-width:60px">
+              <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:13px;font-weight:700;text-align:center">QUESTION</div>
+            </th>
+            ${Array.from({length:10},(_,i)=>{
+              const q=questions[i];
+              return`<th style="border:1px solid #999;background:#d6e4bc;padding:3px;text-align:center;height:120px;vertical-align:middle;min-width:44px">
+                ${q?`<div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:12px;font-weight:700;line-height:1.3;text-align:center;margin:auto">${q.topic}</div>`:'<div style="height:115px"></div>'}
+              </th>`;
+            }).join('')}
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td style="border:1px solid #999;background:#bdd7ee;text-align:center;padding:4px;vertical-align:middle">
+              <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:13px;font-weight:700;text-align:center">AVERAGE %</div>
+            </td>
+            ${Array.from({length:10},(_,i)=>{
+              const item=qAvgs[i];
+              return`<td style="border:1px solid #999;padding:8px 4px;text-align:center;font-weight:700;font-size:14px;font-family:Calibri,Arial">${item?item.pct:''}</td>`;
+            }).join('')}
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- BAR CHART -->
+    <div style="border:1px solid #999;border-top:none;padding:10px 10px 4px 10px">
+      <div style="text-align:center;font-size:12px;font-weight:700;background:#1a1a18;color:white;padding:5px;margin-bottom:8px;letter-spacing:1px;font-family:Calibri,Arial">AVERAGE % PER QUESTION</div>
+      <div style="display:flex;align-items:center">
+        <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px;color:#555;font-family:Calibri,Arial;text-align:center;white-space:nowrap;margin-right:2px">PERCENTAGE(%)</div>
+        <div style="flex:1">
+          <svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 ${svgW} ${svgH}" style="display:block;overflow:visible">
+            <defs>${defs}</defs>
+            <g transform="translate(0,6)">
+              ${gridLines}${barsSvg}
+              <line x1="${svgPadL}" y1="0" x2="${svgPadL}" y2="${chartH}" stroke="#999" stroke-width="1"/>
+              <line x1="${svgPadL}" y1="${chartH}" x2="${svgW}" y2="${chartH}" stroke="#999" stroke-width="1"/>
+            </g>
+          </svg>
+          <div style="text-align:center;font-size:10px;color:#555;font-family:Calibri,Arial;padding-left:${svgPadL}px;margin-top:2px">QUESTION</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FULL CLASS RESULTS -->
+    <div style="margin-top:16px">
+      <div style="font-size:12px;font-weight:700;font-family:Calibri,Arial;margin-bottom:4px;color:#375623">FULL CLASS RESULTS</div>
+    <div style="overflow-x:auto">
       <table style="width:100%;border-collapse:collapse;font-size:11px;font-family:Calibri,Arial">
         <thead>
           <tr>
@@ -544,7 +598,7 @@ function renderSummary(){
             ${Array.from({length:10},(_,i)=>{
               const q=questions[i];
               return`<th style="border:1px solid #999;background:#d6e4bc;padding:3px;text-align:center;height:110px;vertical-align:middle">
-                ${q?`<div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:12px;font-weight:700;line-height:1.3;text-align:center">${q.topic}</div>`:'<div style="height:105px"></div>'}
+                ${q?`<div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:12px;font-weight:700;line-height:1.3;text-align:center;width:100%;display:flex;align-items:center;justify-content:center">${q.topic}</div>`:'<div style="height:105px"></div>'}
               </th>`;
             }).join('')}
             <th style="border:1px solid #999;background:#d6e4bc;padding:4px"></th>
@@ -594,55 +648,7 @@ function renderSummary(){
       </table>
     </div>
 
-    <!-- QUESTION/AVERAGE TABLE above chart -->
-    <div style="overflow-x:auto;margin-bottom:0">
-      <table style="width:100%;border-collapse:collapse;font-size:11px;font-family:Calibri,Arial;margin-bottom:0">
-        <thead>
-          <tr>
-            <th style="border:1px solid #999;background:#bdd7ee;text-align:center;padding:3px;height:120px;vertical-align:middle;min-width:60px">
-              <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:13px;font-weight:700;text-align:center">QUESTION</div>
-            </th>
-            ${Array.from({length:10},(_,i)=>{
-              const q=questions[i];
-              return`<th style="border:1px solid #999;background:#d6e4bc;padding:3px;text-align:center;height:120px;vertical-align:middle;min-width:44px">
-                ${q?`<div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:12px;font-weight:700;line-height:1.3;text-align:center">${q.topic}</div>`:'<div style="height:115px"></div>'}
-              </th>`;
-            }).join('')}
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td style="border:1px solid #999;background:#bdd7ee;text-align:center;padding:4px;vertical-align:middle">
-              <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:13px;font-weight:700;text-align:center">AVERAGE %</div>
-            </td>
-            ${Array.from({length:10},(_,i)=>{
-              const item=qAvgs[i];
-              return`<td style="border:1px solid #999;padding:8px 4px;text-align:center;font-weight:700;font-size:14px;font-family:Calibri,Arial">${item?item.pct:''}</td>`;
-            }).join('')}
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- BAR CHART -->
-    <div style="border:1px solid #999;border-top:none;padding:10px 10px 4px 10px">
-      <div style="text-align:center;font-size:12px;font-weight:700;background:#1a1a18;color:white;padding:5px;margin-bottom:8px;letter-spacing:1px;font-family:Calibri,Arial">AVERAGE % PER QUESTION</div>
-      <div style="display:flex;align-items:center">
-        <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px;color:#555;font-family:Calibri,Arial;text-align:center;white-space:nowrap;margin-right:2px">PERCENTAGE(%)</div>
-        <div style="flex:1">
-          <svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 ${svgW} ${svgH}" style="display:block;overflow:visible">
-            <defs>${defs}</defs>
-            <g transform="translate(0,6)">
-              ${gridLines}${barsSvg}
-              <line x1="${svgPadL}" y1="0" x2="${svgPadL}" y2="${chartH}" stroke="#999" stroke-width="1"/>
-              <line x1="${svgPadL}" y1="${chartH}" x2="${svgW}" y2="${chartH}" stroke="#999" stroke-width="1"/>
-            </g>
-          </svg>
-          <div style="text-align:center;font-size:10px;color:#555;font-family:Calibri,Arial;padding-left:${svgPadL}px;margin-top:2px">QUESTION</div>
-        </div>
-      </div>
-    </div>
-  </div>`;
+    </div>  </div>`;
 
   document.getElementById('tab-summary').classList.add('has-data');
 }
@@ -1530,6 +1536,63 @@ function focusMarkCell(si,qi){
     input.focus();
     input.select(); // select all so typing replaces the value immediately
   }
+}
+
+// ── DOWNLOAD ALL REPORTS AS PDF ─────────────────────────────────────────────
+async function downloadAllPDF(){
+  const btn=document.querySelector('[onclick="downloadAllPDF()"]');
+  btn.textContent='⏳ Generating...';btn.disabled=true;
+
+  // Make sure all 3 pages are rendered
+  renderSummary();
+  renderSpip();
+  renderFortnightly();
+
+  await new Promise(r=>setTimeout(r,800));
+
+  try{
+    const {jsPDF}=window.jspdf;
+    const pdf=new jsPDF('p','mm','a4');
+    const pages=['page-summary','page-spip','page-fortnightly'];
+    const labels=['Item Analysis','SPIP','Fortnightly Report'];
+
+    for(let i=0;i<pages.length;i++){
+      const el=document.getElementById(pages[i]);
+      // Temporarily show the page
+      el.style.display='block';
+      const canvas=await html2canvas(el,{scale:1.5,useCORS:true,backgroundColor:'#ffffff'});
+      el.style.display='none';
+
+      const imgW=210; // A4 width in mm
+      const imgH=canvas.height*imgW/canvas.width;
+      const imgData=canvas.toDataURL('image/jpeg',0.92);
+
+      if(i>0)pdf.addPage();
+      // Add pages, splitting if too long
+      let yPos=0;
+      const pageH=297;
+      while(yPos<imgH){
+        if(yPos>0)pdf.addPage();
+        pdf.addImage(imgData,'JPEG',0,-yPos,imgW,imgH);
+        yPos+=pageH;
+      }
+    }
+
+    // Restore current page display
+    document.querySelectorAll('.page').forEach(p=>p.style.display='');
+    const active=document.querySelector('.page.active');
+    if(active)active.style.display='block';
+
+    const m=getMeta();
+    pdf.save(`${m.school}_${m.task}_Reports.pdf`);
+  }catch(e){
+    console.error('PDF error:',e);
+    alert('PDF generation failed. Try printing instead.');
+    document.querySelectorAll('.page').forEach(p=>p.style.display='');
+    const active=document.querySelector('.page.active');
+    if(active)active.style.display='block';
+  }
+  btn.textContent='⬇ Download PDF';btn.disabled=false;
 }
 
 // ── FORGOT PASSWORD ────────────────────────────────────────────────────────
