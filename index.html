@@ -108,6 +108,39 @@ tr.absent td{opacity:0.4;}
   #summary-content>div>div:nth-last-child(2){page-break-inside:avoid!important;}
   table{page-break-inside:auto;}
   tr{page-break-inside:avoid;}
+  /* SPIP: scale to fit on page, landscape */
+  #page-spip.pt{
+    transform-origin:top left;
+    width:100%;
+  }
+  #spip-render{overflow:visible!important;}
+  #spip-render table{
+    width:100%!important;
+    table-layout:fixed!important;
+    font-size:8px!important;
+  }
+  #spip-render th, #spip-render td{
+    padding:2px 2px!important;
+    font-size:8px!important;
+    word-wrap:break-word!important;
+    overflow-wrap:break-word!important;
+  }
+  #spip-render textarea{
+    font-size:8px!important;
+    min-height:40px!important;
+  }
+  #spip-render .spip-doc{
+    padding:8px!important;
+    max-width:none!important;
+  }
+}
+@page{size:A4 landscape;margin:0.8cm;}
+@media print and (orientation:portrait){
+  #page-spip.pt{
+    transform:scale(0.65);
+    transform-origin:top left;
+    width:154%!important;
+  }
 }
 
 /* MOBILE */
