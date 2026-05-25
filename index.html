@@ -1030,10 +1030,8 @@ async function handleLogin(){
   const prof=await supaFetch(`/rest/v1/profiles?id=eq.${currentUser.id}&select=*`);
   if(prof.ok&&prof.data&&prof.data.length>0){
     currentProfile=prof.data[0];
-    // Pre-fill meta fields from profile
+    // Only pre-fill name and school from profile — subject/grade/task come from the analysis
     if(currentProfile.full_name)document.getElementById('f-educator').value=currentProfile.full_name;
-    if(currentProfile.subject)document.getElementById('f-subject').value=currentProfile.subject;
-    if(currentProfile.grade)document.getElementById('f-grade').value=currentProfile.grade;
     if(currentProfile.school)document.getElementById('f-school').value=currentProfile.school;
   } else {
     // Create profile on first signup
@@ -1059,8 +1057,6 @@ async function saveAnalysis(){
       body:JSON.stringify({
         id:currentUser.id,
         full_name:m.educator,
-        subject:m.subject,
-        grade:m.grade,
         school:m.school
       })
     });
