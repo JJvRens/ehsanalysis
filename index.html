@@ -1551,10 +1551,8 @@ function printAllReports(){
 
     // Get all styles from the current page
     const styles=Array.from(document.styleSheets).map(ss=>{
-      try{return Array.from(ss.cssRules).map(r=>r.cssText).join('
-');}catch{return '';}
-    }).join('
-');
+      try{return Array.from(ss.cssRules).map(r=>r.cssText).join(' ');}catch{return '';}
+    }).join(' ');
 
     const win=window.open('','_blank');
     const html='<!DOCTYPE html><html><head>'
