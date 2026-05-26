@@ -106,6 +106,8 @@ tr.absent td{opacity:0.4;}
   /* Prevent chart and key blocks from splitting across pages */
   svg, .chart-section, #summary-content>div>div:last-child,
   #summary-content>div>div:nth-last-child(2){page-break-inside:avoid!important;}
+  /* Force chart to not overflow page */
+  svg{max-height:130px!important;overflow:hidden!important;}
   table{page-break-inside:auto;}
   tr{page-break-inside:avoid;}
   /* SPIP: scale to fit on page, landscape */
@@ -472,7 +474,7 @@ function renderSummary(){
   const m=getMeta();
 
   // Chart
-  const barW=32,gap=7,chartH=110,svgPadL=30,svgPadB=24;
+  const barW=28,gap=6,chartH=85,svgPadL=28,svgPadB=20;
   const svgW=svgPadL+(barW+gap)*10+gap+10;
   const svgH=chartH+svgPadB;
   const maxVal=90;
@@ -605,8 +607,8 @@ function renderSummary(){
       <div style="text-align:center;font-size:12px;font-weight:700;background:#1a1a18;color:white;padding:5px;margin-bottom:8px;letter-spacing:1px;font-family:Calibri,Arial">AVERAGE % PER QUESTION</div>
       <div style="display:flex;align-items:center">
         <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px;color:#555;font-family:Calibri,Arial;text-align:center;white-space:nowrap;margin-right:2px">PERCENTAGE(%)</div>
-        <div style="flex:1">
-          <svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 ${svgW} ${svgH}" style="display:block;overflow:visible">
+        <div style="flex:1;max-height:140px;overflow:hidden">
+          <svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 ${svgW} ${svgH}" style="display:block;overflow:visible;max-height:130px">
             <defs>${defs}</defs>
             <g transform="translate(0,6)">
               ${gridLines}${barsSvg}
