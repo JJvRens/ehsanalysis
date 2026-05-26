@@ -604,23 +604,22 @@ function renderSummary(){
       </table>
     </div>
 
-    <!-- BAR CHART -->
-    <div style="border:1px solid #999;border-top:none;padding:10px 10px 4px 10px">
-      <div style="text-align:center;font-size:12px;font-weight:700;background:#1a1a18;color:white;padding:5px;margin-bottom:8px;letter-spacing:1px;font-family:Calibri,Arial">AVERAGE % PER QUESTION</div>
-      <div style="display:flex;align-items:center">
-        <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px;color:#555;font-family:Calibri,Arial;text-align:center;white-space:nowrap;margin-right:2px">PERCENTAGE(%)</div>
-        <div style="flex:1">
-          <svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="-2 -18 ${svgW+4} ${svgH+22}" style="display:block;overflow:visible">
-            <defs>${defs}</defs>
-            <g transform="translate(0,14)">
-              ${gridLines}${barsSvg}
-              <line x1="${svgPadL}" y1="0" x2="${svgPadL}" y2="${chartH}" stroke="#999" stroke-width="1"/>
-              <line x1="${svgPadL}" y1="${chartH}" x2="${svgW}" y2="${chartH}" stroke="#999" stroke-width="1"/>
-            </g>
-          </svg>
-          <div style="text-align:center;font-size:10px;color:#555;font-family:Calibri,Arial;padding-left:${svgPadL}px;margin-top:6px">QUESTION</div>
-        </div>
-      </div>
+    <!-- BAR CHART — title inside SVG so it never splits across pages -->
+    <div style="border:1px solid #999;border-top:none;padding:4px 10px 4px 10px;page-break-inside:avoid">
+      <svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="-2 -4 ${svgW+40} ${svgH+52}" style="display:block;overflow:visible">
+        <defs>${defs}</defs>
+        <!-- Title bar inside SVG -->
+        <rect x="-2" y="-4" width="${svgW+40}" height="22" fill="#1a1a18"/>
+        <text x="${(svgW+36)/2}" y="12" text-anchor="middle" font-size="11" font-weight="700" fill="white" font-family="Calibri,Arial" letter-spacing="1">AVERAGE % PER QUESTION</text>
+        <!-- Y axis label -->
+        <text transform="translate(8,${chartH/2+22}) rotate(-90)" text-anchor="middle" font-size="9" fill="#555" font-family="Calibri,Arial">PERCENTAGE(%)</text>
+        <g transform="translate(28,22)">
+          ${gridLines}${barsSvg}
+          <line x1="${svgPadL}" y1="0" x2="${svgPadL}" y2="${chartH}" stroke="#999" stroke-width="1"/>
+          <line x1="${svgPadL}" y1="${chartH}" x2="${svgW}" y2="${chartH}" stroke="#999" stroke-width="1"/>
+          <text x="${(svgW+svgPadL)/2}" y="${chartH+svgPadB+2}" text-anchor="middle" font-size="9" fill="#555" font-family="Calibri,Arial">QUESTION</text>
+        </g>
+      </svg>
     </div>
     </div><!-- end first page no-break wrapper -->
 
