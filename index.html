@@ -501,6 +501,8 @@ function renderSummary(){
   document.getElementById('summary-content').innerHTML=`
   <div style="background:white;font-family:Calibri,Arial,sans-serif;font-size:11px;max-width:980px">
 
+    <!-- FIRST PAGE: header + question/avg table + chart all together, no page break -->
+    <div style="page-break-inside:avoid">
     <!-- TOP ROW: title block left + level table right, side by side -->
     <div style="display:flex;align-items:flex-start;gap:16px;margin-bottom:14px">
 
@@ -616,6 +618,7 @@ function renderSummary(){
         </div>
       </div>
     </div>
+    </div><!-- end first page no-break wrapper -->
 
     <!-- FULL CLASS RESULTS — Excel-style with page break -->
     <div style="margin-top:16px;page-break-before:always">
