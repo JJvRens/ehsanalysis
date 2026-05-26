@@ -9,15 +9,15 @@
 :root {
   --ink:#1a1a18;--ink2:#3a3a35;--ink3:#7a7a72;
   --paper:#f5f7f2;--paper2:#ebefe6;--paper3:#dde4d6;
-  --green-dark:#1a4d25;--green-mid:#2e7d42;--green-light:#d6e8bc;--green-pale:#eef5e6;
-  --blue-col:#9dc3e6;--gold:#b8860b;--red:#8b2020;
+  --green-dark:#393768;--green-mid:#393768;--green-light:#d6d4f0;--green-pale:#f0effe;
+  --blue-col:#9dc3e6;--gold:#ccaa00;--red:#8b2020;
   --border:#c8d4be;--mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 body{font-family:var(--sans);background:var(--paper);color:var(--ink);font-size:14px;min-height:100vh;}
 
 /* TOPBAR */
-.topbar{background:var(--green-dark);color:white;padding:0 1.5rem;display:flex;align-items:center;height:54px;position:sticky;top:0;z-index:100;border-bottom:3px solid var(--gold);}
+.topbar{background:#393768;color:white;padding:0 1.5rem;display:flex;align-items:center;height:54px;position:sticky;top:0;z-index:100;border-bottom:3px solid var(--gold);}
 .logo{font-size:13px;font-weight:600;color:white;flex-shrink:0;padding-right:1.5rem;border-right:1px solid rgba(255,255,255,0.2);line-height:1.3;}
 .logo small{display:block;font-size:9px;font-weight:300;opacity:0.7;letter-spacing:0.05em;text-transform:uppercase;}
 .nav-tabs{display:flex;flex:1;padding-left:0.75rem;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
@@ -28,7 +28,7 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);font-size:
 .nav-tab .dot{width:5px;height:5px;border-radius:50%;background:var(--gold);margin-left:5px;display:none;}
 .nav-tab.has-data .dot{display:inline-block;}
 .print-btn{margin-left:auto;padding:6px 14px;background:var(--gold);color:white;border:none;border-radius:3px;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--sans);letter-spacing:0.05em;text-transform:uppercase;flex-shrink:0;}
-.print-btn:hover{background:#c99b20;}
+.print-btn:hover{background:#ddbb00;}
 
 /* PAGES */
 .page{display:none;padding:1.5rem 2rem;max-width:1150px;margin:0 auto;}
@@ -39,7 +39,7 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);font-size:
 .field-group{display:flex;flex-direction:column;gap:3px;}
 .field-group label{font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink3);}
 .field-group input,.field-group select{padding:6px 8px;border:1px solid var(--border);border-radius:3px;font-family:var(--sans);font-size:12px;background:white;color:var(--ink);outline:none;}
-.field-group input:focus,.field-group select:focus{border-color:var(--green-mid);}
+.field-group input:focus,.field-group select:focus{border-color:#4a4880;}
 
 /* Q CONFIG */
 .q-config{background:white;border:1px solid var(--border);border-radius:4px;padding:1rem;margin-bottom:1.25rem;}
@@ -48,9 +48,9 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);font-size:
 .q-row{display:grid;grid-template-columns:50px 1fr 70px 90px;gap:8px;align-items:center;}
 .q-row label{font-size:11px;color:var(--ink2);font-family:var(--mono);font-weight:500;}
 .q-row input{padding:5px 7px;border:1px solid var(--border);border-radius:3px;font-family:var(--sans);font-size:12px;background:white;color:var(--ink);outline:none;}
-.q-row input:focus{border-color:var(--green-mid);}
+.q-row input:focus{border-color:#4a4880;}
 .add-q-btn{margin-top:8px;padding:5px 12px;border:1px dashed var(--border);background:none;border-radius:3px;font-size:11px;color:var(--ink3);cursor:pointer;font-family:var(--sans);}
-.add-q-btn:hover{border-color:var(--green-mid);color:var(--green-dark);}
+.add-q-btn:hover{border-color:#4a4880;color:#393768;}
 .remove-q{padding:3px 7px;border:none;background:none;color:var(--ink3);cursor:pointer;font-size:13px;}
 .remove-q:hover{color:var(--red);}
 
@@ -58,28 +58,28 @@ body{font-family:var(--sans);background:var(--paper);color:var(--ink);font-size:
 .section-lbl{font-size:10px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:0.5rem;margin-top:1.25rem;}
 .table-wrap{overflow-x:auto;}
 table.et{width:100%;border-collapse:collapse;font-size:12px;}
-table.et th{background:var(--green-dark);color:white;padding:6px 8px;text-align:center;font-size:10px;font-weight:500;letter-spacing:0.04em;white-space:nowrap;border:1px solid rgba(255,255,255,0.15);}
+table.et th{background:#393768;color:white;padding:6px 8px;text-align:center;font-size:10px;font-weight:500;letter-spacing:0.04em;white-space:nowrap;border:1px solid rgba(255,255,255,0.15);}
 table.et th.left{text-align:left;}
 table.et td{padding:3px 5px;border:1px solid var(--paper3);text-align:center;background:white;}
 table.et tr:nth-child(even) td{background:#fafcf8;}
 table.et tr:hover td{background:var(--green-pale);}
 table.et td.nc{text-align:left;padding-left:8px;}
 table.et td input.mi{width:48px;padding:3px 5px;border:1px solid var(--border);border-radius:2px;font-family:var(--mono);font-size:11px;text-align:center;background:white;color:var(--ink);outline:none;}
-table.et td input.mi:focus{border-color:var(--green-mid);background:var(--green-pale);}
+table.et td input.mi:focus{border-color:#4a4880;background:var(--green-pale);}
 table.et td input.ni{width:170px;padding:3px 7px;border:1px solid var(--border);border-radius:2px;font-family:var(--sans);font-size:12px;background:white;color:var(--ink);outline:none;}
-table.et td input.ni:focus{border-color:var(--green-mid);}
+table.et td input.ni:focus{border-color:#4a4880;}
 .tc{font-family:var(--mono);font-weight:600;font-size:12px;}
 .pc{font-family:var(--mono);font-size:11px;}
 .lb{display:inline-block;padding:1px 6px;border-radius:2px;font-size:10px;font-family:var(--mono);font-weight:600;}
 .l1{background:#fde8e8;color:#7a1a1a;}.l2{background:#fdf0dc;color:#6b3d00;}.l3{background:#fff8dc;color:#5a4200;}
-.l4{background:#deeeff;color:#0d3d7a;}.l5{background:#deeeff;color:#0d3d7a;}.l6{background:#e4f0e4;color:#1a4d2a;}
-.l7{background:#d0e8d8;color:#0f3d20;}.l8{background:#b8dccc;color:#0a2d18;}
+.l4{background:#deeeff;color:#0d3d7a;}.l5{background:#deeeff;color:#0d3d7a;}.l6{background:#e4f0e4;color:#393768;}
+.l7{background:#d0e8d8;color:#393768;}.l8{background:#b8dccc;color:#393768;}
 tr.absent td{opacity:0.4;}
 .add-s-btn{margin-top:8px;padding:6px 14px;border:1px dashed var(--border);background:none;border-radius:3px;font-size:11px;color:var(--ink3);cursor:pointer;font-family:var(--sans);}
-.add-s-btn:hover{border-color:var(--green-mid);color:var(--green-dark);}
+.add-s-btn:hover{border-color:#4a4880;color:#393768;}
 
 /* NO-PRINT BAR */
-.npbar{display:flex;gap:8px;align-items:center;margin-bottom:1rem;padding:8px 12px;background:var(--green-pale);border:1px solid var(--green-light);border-radius:3px;font-size:12px;color:var(--green-dark);}
+.npbar{display:flex;gap:8px;align-items:center;margin-bottom:1rem;padding:8px 12px;background:var(--green-pale);border:1px solid var(--green-light);border-radius:3px;font-size:12px;color:#393768;}
 
 /* PRINT */
 @media print{
@@ -95,7 +95,7 @@ tr.absent td{opacity:0.4;}
   /* Make mark table inputs show their values cleanly */
   table.et td input.mi{border:none;background:transparent;font-weight:600;}
   table.et td input.ni{border:none;background:transparent;}
-  table.et th{background:#1a4d25!important;color:white!important;}
+  table.et th{background:#393768!important;color:white!important;}
   /* Hide scrollbars and textarea resize handles */
   *{scrollbar-width:none!important;-ms-overflow-style:none!important;}
   *::-webkit-scrollbar{display:none!important;}
@@ -211,7 +211,7 @@ tr.absent td{opacity:0.4;}
     <button class="nav-tab" onclick="showPage('fortnightly')" id="tab-fortnightly">Fortnightly Report <span class="dot"></span></button>
   </nav>
   <button class="print-btn" onclick="printPage()">⎙ Print</button>
-  <button class="print-btn" onclick="printAllReports()" style="background:#b8860b;margin-left:6px" title="Print Item Analysis + SPIP + Fortnightly as one document">⎙ Print All Reports</button>
+  <button class="print-btn" onclick="printAllReports()" style="background:#ccaa00;margin-left:6px" title="Print Item Analysis + SPIP + Fortnightly as one document">⎙ Print All Reports</button>
 </div>
 
 <!-- MARK ENTRY -->
@@ -245,20 +245,20 @@ tr.absent td{opacity:0.4;}
     <!-- IMPORT BAR -->
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;padding:8px 12px;background:white;border:1px solid var(--border);border-radius:4px;flex-wrap:wrap">
       <span style="font-size:11px;color:var(--ink3)">Import learner names from Excel:</span>
-      <label style="padding:5px 14px;background:var(--green-dark);color:white;border-radius:3px;font-size:11px;font-weight:600;cursor:pointer;letter-spacing:0.05em;font-family:var(--sans)">
+      <label style="padding:5px 14px;background:#393768;color:white;border-radius:3px;font-size:11px;font-weight:600;cursor:pointer;letter-spacing:0.05em;font-family:var(--sans)">
         📂 Upload .xlsx / .xls
         <input type="file" id="excel-upload" accept=".xlsx,.xls,.csv" style="display:none" onchange="importFromExcel(this)"/>
       </label>
       <span style="font-size:11px;color:var(--ink3)">— the app will look for a column containing learner names and import them automatically.</span>
-      <span id="import-status" style="font-size:11px;font-weight:600;color:var(--green-mid)"></span>
+      <span id="import-status" style="font-size:11px;font-weight:600;color:#4a4880"></span>
     </div>
   </div>
 
   <!-- PRINT HEADER — only shows when printing -->
   <div class="print-only" id="entry-print-header" style="display:none;font-family:Arial,sans-serif;margin-bottom:12px">
-    <table style="width:100%;border-collapse:collapse;border:2px solid #1a4d25;margin-bottom:8px">
+    <table style="width:100%;border-collapse:collapse;border:2px solid #393768;margin-bottom:8px">
       <tr>
-        <td style="width:90px;padding:8px;border-right:2px solid #1a4d25;text-align:center;vertical-align:middle">
+        <td style="width:90px;padding:8px;border-right:2px solid #393768;text-align:center;vertical-align:middle">
           <img src="wapen.jpeg" style="width:72px;height:72px;object-fit:contain" onerror="this.style.display='none'"/>
         </td>
         <td style="text-align:center;padding:8px;vertical-align:middle">
@@ -420,7 +420,7 @@ function renderTable(){
       <td class="nc"><input class="ni" value="${s.name}" oninput="students[${si}].name=this.value;window._spipRendered=false;window._fnRendered=false;"/></td>
       ${questions.map((q,qi)=>`<td><input class="mi" type="number" min="0" max="${q.max}" value="${s.marks[qi]??0}" onchange="updateMark(${si},${qi},this.value)" onkeydown="navigateMark(event,${si},${qi})"/></td>`).join('')}
       <td id="tot-${si}" class="tc" style="background:${ab?'':'#fffff0'}">${ab?'—':tot}</td>
-      <td id="pct-${si}" class="pc" style="background:${ab?'':'#fffff0'};color:${ab?'inherit':'#1a4d25'};font-weight:600">${ab?'—':pct+'%'}</td>
+      <td id="pct-${si}" class="pc" style="background:${ab?'':'#fffff0'};color:${ab?'inherit':'#393768'};font-weight:600">${ab?'—':pct+'%'}</td>
       <td id="lvl-${si}"><span class="lb ${lv.cls}">${ab?'ABS':lv.label}</span></td>
       <td style="text-align:center;padding:2px;border-bottom:1px solid var(--paper3)"><button onclick="deleteStudent(${si})" style="background:none;border:none;color:#c0392b;cursor:pointer;font-size:14px;font-weight:700;padding:2px 5px;border-radius:3px;line-height:1" title="Remove learner">✕</button></td></tr>\``;
   }).join('');
@@ -444,7 +444,7 @@ function updateMark(si,qi,val){
   const lvlEl=document.getElementById(`lvl-${si}`);
   const rowEl=document.getElementById(`row-${si}`);
   if(totEl)totEl.textContent=ab?'—':tot;
-  if(pctEl){pctEl.textContent=ab?'—':pct+'%';pctEl.style.color=ab?'inherit':'#1a4d25';}
+  if(pctEl){pctEl.textContent=ab?'—':pct+'%';pctEl.style.color=ab?'inherit':'#393768';}
   if(lvlEl)lvlEl.innerHTML=`<span class="lb ${lv.cls}">${ab?'ABS':lv.label}</span>`;
   if(rowEl)rowEl.className=ab?'absent':'';
 }
@@ -560,8 +560,8 @@ function renderSummary(){
       <div style="min-width:200px;flex-shrink:0">
         <table style="width:100%;border-collapse:collapse;font-size:11px;font-family:Calibri,Arial">
           <tr>
-            <th style="background:#375623;color:white;padding:5px 12px;text-align:center;border:1px solid #375623;font-weight:700">LEVEL</th>
-            <th style="background:#375623;color:white;padding:5px 12px;text-align:center;border:1px solid #375623;font-weight:700">TOTAL CANDIDATES</th>
+            <th style="background:#393768;color:white;padding:5px 12px;text-align:center;border:1px solid #393768;font-weight:700">LEVEL</th>
+            <th style="background:#393768;color:white;padding:5px 12px;text-align:center;border:1px solid #393768;font-weight:700">TOTAL CANDIDATES</th>
           </tr>
           ${[1,2,3,4,5,6,7,8].map((l,i)=>`
           <tr>
@@ -586,7 +586,7 @@ function renderSummary(){
             </th>
             ${Array.from({length:10},(_,i)=>{
               const q=questions[i];
-              return`<th style="border:1px solid #999;background:#d6e4bc;padding:3px;text-align:center;height:75px;vertical-align:middle;min-width:44px">
+              return`<th style="border:1px solid #999;background:#d6d4f0;padding:3px;text-align:center;height:75px;vertical-align:middle;min-width:44px">
                 ${q?`<div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:11px;font-weight:700;line-height:1.2;text-align:center;margin:auto">${q.topic}</div>`:'<div style="height:70px"></div>'}
               </th>`;
             }).join('')}
@@ -677,10 +677,10 @@ function renderSummary(){
         <thead>
         <!-- QUESTION NO row - yellow -->
         <tr>
-          <th style="border:1px solid #999;padding:5px 8px;background:#ffff99;text-align:left;font-weight:700;min-width:140px">QUESTION NO.</th>
-          ${Array.from({length:10},(_,i)=>`<th style="border:1px solid #999;padding:5px 4px;background:#ffff99;text-align:center;font-weight:700;min-width:36px">${i+1}</th>`).join('')}
-          <th style="border:1px solid #999;padding:5px 4px;background:#ffff99;text-align:center;font-weight:700" colspan="2"></th>
-          <th style="border:1px solid #999;padding:5px 4px;background:#ffff99;text-align:center;font-weight:700"></th>
+          <th style="border:1px solid #999;padding:5px 8px;background:#ffff00;text-align:left;font-weight:700;min-width:140px">QUESTION NO.</th>
+          ${Array.from({length:10},(_,i)=>`<th style="border:1px solid #999;padding:5px 4px;background:#ffff00;text-align:center;font-weight:700;min-width:36px">${i+1}</th>`).join('')}
+          <th style="border:1px solid #999;padding:5px 4px;background:#ffff00;text-align:center;font-weight:700" colspan="2"></th>
+          <th style="border:1px solid #999;padding:5px 4px;background:#ffff00;text-align:center;font-weight:700"></th>
         </tr>
         <!-- TOPIC row with rotated headers - WHITE background -->
         <tr>
@@ -703,14 +703,14 @@ function renderSummary(){
         </tr>
         <!-- MARKS PER QUESTION row - yellow -->
         <tr>
-          <th style="border:1px solid #999;padding:5px 8px;background:#ffff99;text-align:left;font-weight:700">MARKS PER QUESTION</th>
+          <th style="border:1px solid #999;padding:5px 8px;background:#ffff00;text-align:left;font-weight:700">MARKS PER QUESTION</th>
           ${Array.from({length:10},(_,i)=>{
             const q=questions[i];
-            return`<th style="border:1px solid #999;padding:5px 4px;background:#ffff99;text-align:center;font-weight:700">${q?q.max:''}</th>`;
+            return`<th style="border:1px solid #999;padding:5px 4px;background:#ffff00;text-align:center;font-weight:700">${q?q.max:''}</th>`;
           }).join('')}
-          <th style="border:1px solid #999;padding:5px 4px;background:#ffff99;text-align:center;font-weight:700">${mx}</th>
-          <th style="border:1px solid #999;background:#ffff99;padding:5px"></th>
-          <th style="border:1px solid #999;background:#ffff99;padding:5px"></th>
+          <th style="border:1px solid #999;padding:5px 4px;background:#ffff00;text-align:center;font-weight:700">${mx}</th>
+          <th style="border:1px solid #999;background:#ffff00;padding:5px"></th>
+          <th style="border:1px solid #999;background:#ffff00;padding:5px"></th>
         </tr>
         </thead>
         <tbody>
@@ -729,19 +729,19 @@ function renderSummary(){
                 return`<td style="border:1px solid #ccc;padding:3px 4px;text-align:center;font-family:'Courier New',monospace">${val}</td>`;
               }).join('')}
               <td style="border:1px solid #ccc;padding:3px 4px;text-align:center;font-weight:700;background:#fffff0;font-family:'Courier New',monospace">${tot}</td>
-              <td style="border:1px solid #ccc;padding:3px 4px;text-align:center;font-weight:700;background:#fffde0;color:#375623;font-family:'Courier New',monospace">${pct}</td>
+              <td style="border:1px solid #ccc;padding:3px 4px;text-align:center;font-weight:700;background:#fffde0;color:#393768;font-family:'Courier New',monospace">${pct}</td>
               <td style="border:1px solid #ccc;padding:3px 4px;text-align:center"><span class="lb ${lv.cls}">${lv.label}</span></td>
             </tr>`;
           }).join('')}
-          <tr style="border-top:2px solid #375623">
-            <td style="border:1px solid #999;padding:5px 8px;font-weight:700;background:#d6e4bc;text-align:center">AVERAGE %</td>
+          <tr style="border-top:2px solid #393768">
+            <td style="border:1px solid #999;padding:5px 8px;font-weight:700;background:#d6d4f0;text-align:center">AVERAGE %</td>
             ${Array.from({length:10},(_,i)=>{
               const item=qAvgs[i];
-              return`<td style="border:1px solid #999;padding:5px 4px;text-align:center;font-weight:700;background:#d6e4bc;color:#375623;font-family:'Courier New',monospace">${item?item.pct:''}</td>`;
+              return`<td style="border:1px solid #999;padding:5px 4px;text-align:center;font-weight:700;background:#d6d4f0;color:#393768;font-family:'Courier New',monospace">${item?item.pct:''}</td>`;
             }).join('')}
-            <td style="border:1px solid #999;background:#d6e4bc;padding:5px"></td>
-            <td style="border:1px solid #999;padding:5px 4px;text-align:center;font-weight:700;background:#d6e4bc;color:#375623;font-family:'Courier New',monospace">${classAvg}</td>
-            <td style="border:1px solid #999;background:#d6e4bc;padding:5px"></td>
+            <td style="border:1px solid #999;background:#d6d4f0;padding:5px"></td>
+            <td style="border:1px solid #999;padding:5px 4px;text-align:center;font-weight:700;background:#d6d4f0;color:#393768;font-family:'Courier New',monospace">${classAvg}</td>
+            <td style="border:1px solid #999;background:#d6d4f0;padding:5px"></td>
           </tr>
         </tbody>
       </table>
@@ -806,8 +806,8 @@ function renderSpip(){
     {t:'MONITORING By DH/DP/Principal (comment on the progress)',w:'90px',rotate:true},
   ];
   const thHTML=headers.map(h=>{
-    if(!h.rotate)return`<th style="border:1px solid #999;background:var(--green-dark);color:white;padding:6px 3px;font-size:10px;width:${h.w};text-align:center;vertical-align:middle">${h.t}</th>`;
-    return`<th style="border:1px solid #999;background:var(--green-dark);color:white;padding:3px;width:${h.w};height:110px;vertical-align:middle;text-align:center">
+    if(!h.rotate)return`<th style="border:1px solid #999;background:#393768;color:white;padding:6px 3px;font-size:10px;width:${h.w};text-align:center;vertical-align:middle">${h.t}</th>`;
+    return`<th style="border:1px solid #999;background:#393768;color:white;padding:3px;width:${h.w};height:110px;vertical-align:middle;text-align:center">
       <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:9.5px;font-weight:600;line-height:1.3;white-space:normal;font-family:Arial">${h.t}</div>
     </th>`;
   }).join('');
@@ -935,7 +935,7 @@ function renderFortnightly(){
     }).join('');
     return`<tr style="background:${i%2===0?'white':'#f8fcf5'}">
       <td style="text-align:center;padding:3px 5px;border:1px solid #bbb;font-size:11px">${i+1}</td>
-      <td style="padding:3px 7px;border:1px solid #bbb;font-size:11px;background:#d6e8bc">${s.name}</td>
+      <td style="padding:3px 7px;border:1px solid #bbb;font-size:11px;background:#d6d4f0">${s.name}</td>
       <td style="text-align:center;padding:3px 5px;border:1px solid #bbb;font-size:11px">${subj}</td>
       <td style="text-align:center;padding:3px 5px;border:1px solid #bbb;font-size:11px">${sc}</td>
       ${cols}</tr>`;
@@ -994,10 +994,10 @@ function renderFortnightly(){
     <table style="width:100%;border-collapse:collapse;margin-top:10px">
       <thead>
         <tr>
-          <th style="border:1px solid #bbb;padding:4px 5px;font-size:10px;background:#d6e8bc;text-align:center;width:30px">No.</th>
-          <th style="border:1px solid #bbb;padding:4px 7px;font-size:10px;background:#d6e8bc;text-align:left;min-width:150px">Learner</th>
-          <th style="border:1px solid #bbb;padding:4px 5px;font-size:10px;background:#d6e8bc;text-align:center">Subject</th>
-          <th style="border:1px solid #bbb;padding:4px 5px;font-size:10px;background:#d6e8bc;text-align:center">Stream<br>code</th>
+          <th style="border:1px solid #bbb;padding:4px 5px;font-size:10px;background:#d6d4f0;text-align:center;width:30px">No.</th>
+          <th style="border:1px solid #bbb;padding:4px 7px;font-size:10px;background:#d6d4f0;text-align:left;min-width:150px">Learner</th>
+          <th style="border:1px solid #bbb;padding:4px 5px;font-size:10px;background:#d6d4f0;text-align:center">Subject</th>
+          <th style="border:1px solid #bbb;padding:4px 5px;font-size:10px;background:#d6d4f0;text-align:center">Stream<br>code</th>
           ${lvlR.map(lr=>`<th style="border:1px solid #bbb;padding:4px 5px;font-size:10px;background:#9dc3e6;text-align:center;min-width:46px">${lr.label}<br><span style="font-weight:400">${lr.sub}</span></th>`).join('')}
         </tr>
       </thead>
@@ -1120,7 +1120,7 @@ function importFromExcel(input){
 
         renderTable();
         status.textContent=`✓ ${names.length} learner${names.length!==1?'s':''} imported from "${file.name}"`;
-        status.style.color='var(--green-mid)';
+        status.style.color='#4a4880';
         // Reset input so same file can be re-uploaded
         input.value='';
       }catch(err){
@@ -1312,7 +1312,7 @@ async function loadMyAnalyses(){
         <span style="font-weight:600">${a.task||'Untitled'}</span>
         <span style="color:var(--ink3);margin-left:6px">${a.date||''}</span>
       </div>
-      <button onclick="loadAnalysis('${a.id}')" style="padding:3px 10px;font-size:11px;background:var(--green-pale);border:1px solid var(--green-light);color:var(--green-dark);border-radius:3px;cursor:pointer;font-family:var(--sans)">Load</button>
+      <button onclick="loadAnalysis('${a.id}')" style="padding:3px 10px;font-size:11px;background:var(--green-pale);border:1px solid var(--green-light);color:#393768;border-radius:3px;cursor:pointer;font-family:var(--sans)">Load</button>
       <button onclick="deleteAnalysis('${a.id}')" style="padding:3px 8px;font-size:11px;background:none;border:1px solid #e8b4b4;color:var(--red);border-radius:3px;cursor:pointer;font-family:var(--sans)">✕</button>
     </div>`).join('');
 }
@@ -1398,7 +1398,7 @@ async function renderAdmin(){
 
   container.innerHTML=Object.entries(byTeacher).map(([tid,teacher])=>`
     <div style="background:white;border:1px solid var(--border);border-radius:4px;margin-bottom:1rem;overflow:hidden">
-      <div style="background:var(--green-dark);color:white;padding:10px 14px;font-size:13px;font-weight:600;display:flex;justify-content:space-between;align-items:center">
+      <div style="background:#393768;color:white;padding:10px 14px;font-size:13px;font-weight:600;display:flex;justify-content:space-between;align-items:center">
         <span>${teacher.name}</span>
         <span style="font-size:11px;opacity:0.7;font-weight:400">${teacher.analyses.length} analysis${teacher.analyses.length!==1?'es':''}</span>
       </div>
@@ -1424,8 +1424,8 @@ async function renderAdmin(){
               <span style="color:var(--ink3)">${a.profiles?.subject||''} Gr ${a.profiles?.grade||''}</span>
             </div>
             <div style="display:flex;gap:8px;align-items:center">
-              <span style="background:var(--green-pale);color:var(--green-dark);padding:2px 8px;border-radius:3px;font-weight:600">${written.length} learners · avg ${avg}%</span>
-              <span style="background:${passing/written.length>=0.5?'#e4f2e7':'#fdf0f0'};color:${passing/written.length>=0.5?'var(--green-dark)':'var(--red)'};padding:2px 8px;border-radius:3px;font-size:11px">${passing} passing</span>
+              <span style="background:var(--green-pale);color:#393768;padding:2px 8px;border-radius:3px;font-weight:600">${written.length} learners · avg ${avg}%</span>
+              <span style="background:${passing/written.length>=0.5?'#eeedf8':'#fdf0f0'};color:${passing/written.length>=0.5?'#393768':'var(--red)'};padding:2px 8px;border-radius:3px;font-size:11px">${passing} passing</span>
               <span style="color:var(--ink3);font-size:11px">View →</span>
             </div>
           </div>
@@ -1478,7 +1478,7 @@ function showAdminDetail(analysisId){
     const bh=Math.max(2,Math.round(item.pct/100*chartH));
     const x=svgPadL+gap+i*(barW+gap);
     const y=chartH-bh;
-    const col=item.pct>=60?'#2e7d42':item.pct>=40?'#b8860b':'#8b2020';
+    const col=item.pct>=60?'#393768':item.pct>=40?'#ccaa00':'#8b2020';
     return`<rect x="${x}" y="${y}" width="${barW}" height="${bh}" fill="${col}"/>
     <text x="${x+barW/2}" y="${y-4}" text-anchor="middle" font-size="10" font-weight="700" fill="${col}" font-family="Arial">${item.pct}</text>
     <text x="${x+barW/2}" y="${chartH+16}" text-anchor="middle" font-size="10" fill="#555" font-family="Arial">${i+1}</text>`;
@@ -1491,7 +1491,7 @@ function showAdminDetail(analysisId){
   body.innerHTML=`
     <div style="font-family:Arial,sans-serif;font-size:13px">
       <!-- HEADER -->
-      <div style="background:var(--green-dark);color:white;padding:14px 18px;margin:-1.5rem -1.5rem 1rem;border-radius:6px 6px 0 0;display:flex;justify-content:space-between;align-items:center">
+      <div style="background:#393768;color:white;padding:14px 18px;margin:-1.5rem -1.5rem 1rem;border-radius:6px 6px 0 0;display:flex;justify-content:space-between;align-items:center">
         <div>
           <div style="font-size:16px;font-weight:700">${teacherName}</div>
           <div style="font-size:12px;opacity:0.8;margin-top:2px">${a.profiles?.subject||''} · Grade ${a.profiles?.grade||''} · ${a.task||''} · ${a.date||''}</div>
@@ -1502,7 +1502,7 @@ function showAdminDetail(analysisId){
       <!-- STATS -->
       <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:1rem">
         <div style="background:var(--paper2);border-radius:4px;padding:10px 12px"><div style="font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.06em">Class Average</div><div style="font-size:24px;font-weight:300;margin-top:3px">${avg}%</div></div>
-        <div style="background:var(--paper2);border-radius:4px;padding:10px 12px"><div style="font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.06em">Passing</div><div style="font-size:24px;font-weight:300;margin-top:3px;color:var(--green-dark)">${passing}</div></div>
+        <div style="background:var(--paper2);border-radius:4px;padding:10px 12px"><div style="font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.06em">Passing</div><div style="font-size:24px;font-weight:300;margin-top:3px;color:#393768">${passing}</div></div>
         <div style="background:var(--paper2);border-radius:4px;padding:10px 12px"><div style="font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.06em">Failing</div><div style="font-size:24px;font-weight:300;margin-top:3px;color:var(--red)">${written.length-passing}</div></div>
         <div style="background:var(--paper2);border-radius:4px;padding:10px 12px"><div style="font-size:10px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.06em">Absent</div><div style="font-size:24px;font-weight:300;margin-top:3px;color:var(--ink3)">${real.length-written.length}</div></div>
       </div>
@@ -1525,7 +1525,7 @@ function showAdminDetail(analysisId){
       <div style="font-size:10px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:var(--ink3);margin-bottom:6px">Average per topic</div>
       <div style="background:white;border:1px solid var(--border);border-radius:4px;padding:10px 14px;margin-bottom:1rem">
         ${qAvgs.map(({q,avg,pct})=>{
-          const col=pct>=60?'#2e7d42':pct>=40?'#b8860b':'#8b2020';
+          const col=pct>=60?'#393768':pct>=40?'#ccaa00':'#8b2020';
           return`<div style="display:flex;align-items:center;gap:10px;padding:5px 0;border-bottom:1px solid var(--paper3)">
             <div style="flex:2;font-size:11px"><strong>${q.label}</strong> — ${q.topic} <span style="color:var(--ink3)">(/${q.max})</span></div>
             <div style="flex:3;height:8px;background:var(--paper2);border-radius:4px;overflow:hidden"><div style="width:${pct}%;height:100%;background:${col};border-radius:4px"></div></div>
@@ -1550,12 +1550,12 @@ function showAdminDetail(analysisId){
       <div style="overflow-x:auto">
         <table style="width:100%;border-collapse:collapse;font-size:11px">
           <thead><tr>
-            <th style="background:var(--green-dark);color:white;padding:5px 8px;text-align:left">#</th>
-            <th style="background:var(--green-dark);color:white;padding:5px 8px;text-align:left">Learner</th>
-            ${qs.map(q=>`<th style="background:var(--green-dark);color:white;padding:5px 6px;text-align:center">${q.label}</th>`).join('')}
-            <th style="background:var(--green-dark);color:white;padding:5px 6px;text-align:center">Total</th>
-            <th style="background:var(--green-dark);color:white;padding:5px 6px;text-align:center">%</th>
-            <th style="background:var(--green-dark);color:white;padding:5px 6px;text-align:center">Level</th>
+            <th style="background:#393768;color:white;padding:5px 8px;text-align:left">#</th>
+            <th style="background:#393768;color:white;padding:5px 8px;text-align:left">Learner</th>
+            ${qs.map(q=>`<th style="background:#393768;color:white;padding:5px 6px;text-align:center">${q.label}</th>`).join('')}
+            <th style="background:#393768;color:white;padding:5px 6px;text-align:center">Total</th>
+            <th style="background:#393768;color:white;padding:5px 6px;text-align:center">%</th>
+            <th style="background:#393768;color:white;padding:5px 6px;text-align:center">Level</th>
           </tr></thead>
           <tbody>
             ${real.map((s,i)=>{
@@ -1568,7 +1568,7 @@ function showAdminDetail(analysisId){
                 <td style="border:1px solid var(--paper3);padding:3px 8px">${s.name}</td>
                 ${qs.map((q,qi)=>`<td style="border:1px solid var(--paper3);padding:3px 6px;text-align:center;font-family:var(--mono)">${ab?'—':s.marks[qi]||0}</td>`).join('')}
                 <td style="border:1px solid var(--paper3);padding:3px 6px;text-align:center;font-weight:600;background:#fffff0;font-family:var(--mono)">${ab?'—':tot}</td>
-                <td style="border:1px solid var(--paper3);padding:3px 6px;text-align:center;font-weight:600;color:var(--green-dark);font-family:var(--mono)">${ab?'—':pct+'%'}</td>
+                <td style="border:1px solid var(--paper3);padding:3px 6px;text-align:center;font-weight:600;color:#393768;font-family:var(--mono)">${ab?'—':pct+'%'}</td>
                 <td style="border:1px solid var(--paper3);padding:3px 6px;text-align:center"><span class="lb ${lv.cls}">${ab?'ABS':lv.label}</span></td>
               </tr>`;
             }).join('')}
@@ -1665,8 +1665,8 @@ function printAllReports(){
       +'body{font-family:Arial,sans-serif;background:white;margin:0;padding:20px;}'
       +'.report-section{page-break-after:always;margin-bottom:0;}'
       +'.report-section:last-child{page-break-after:auto;}'
-      +'.report-title{font-size:13px;font-weight:700;color:#1a4d25;text-transform:uppercase;'
-      +'letter-spacing:0.06em;border-bottom:2px solid #1a4d25;padding-bottom:4px;margin-bottom:16px;}'
+      +'.report-title{font-size:13px;font-weight:700;color:#393768;text-transform:uppercase;'
+      +'letter-spacing:0.06em;border-bottom:2px solid #393768;padding-bottom:4px;margin-bottom:16px;}'
       +'@media print{'
       +'*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}'
       +'@page{margin:1cm;}'
@@ -1706,7 +1706,7 @@ async function sendResetEmail(){
       headers:{'apikey':SUPA_ANON,'Content-Type':'application/json'},
       body:JSON.stringify({email})
     });
-    msg.style.color='var(--green-mid)';
+    msg.style.color='#4a4880';
     msg.textContent='If that email exists, a reset link has been sent. Check your inbox.';
   }catch(e){
     msg.style.color='var(--red)';
@@ -1725,7 +1725,7 @@ document.addEventListener('DOMContentLoaded',()=>{
 <!-- ADMIN DETAIL MODAL -->
 <div id="admin-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:999;align-items:flex-start;justify-content:center;padding:1rem;overflow-y:auto">
   <div style="background:white;border-radius:8px;padding:1.5rem;width:100%;max-width:900px;margin:auto;position:relative">
-    <button onclick="document.getElementById('admin-modal').style.display='none'" style="position:sticky;top:0;float:right;background:var(--green-dark);color:white;border:none;border-radius:3px;padding:6px 14px;font-size:12px;cursor:pointer;font-family:var(--sans);margin-bottom:0.5rem">✕ Close</button>
+    <button onclick="document.getElementById('admin-modal').style.display='none'" style="position:sticky;top:0;float:right;background:#393768;color:white;border:none;border-radius:3px;padding:6px 14px;font-size:12px;cursor:pointer;font-family:var(--sans);margin-bottom:0.5rem">✕ Close</button>
     <div id="admin-modal-body"></div>
   </div>
 </div>
@@ -1752,7 +1752,7 @@ document.addEventListener('DOMContentLoaded',()=>{
         <input id="auth-password" type="password" placeholder="••••••••" style="width:100%;padding:8px 10px;border:1px solid rgba(255,255,255,0.4);border-radius:6px;font-size:13px;font-family:var(--sans);outline:none;background:rgba(255,255,255,0.2);color:white;" onkeydown="if(event.key==='Enter')handleLogin()"/>
       </div>
       <div id="auth-error" style="color:#ffb3b3;font-size:12px;min-height:18px;margin-bottom:8px"></div>
-      <button id="auth-btn" onclick="handleLogin()" style="width:100%;padding:10px;background:var(--green-dark);color:white;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans);box-shadow:0 2px 8px rgba(0,0,0,0.3)">Log in</button>
+      <button id="auth-btn" onclick="handleLogin()" style="width:100%;padding:10px;background:#393768;color:white;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans);box-shadow:0 2px 8px rgba(0,0,0,0.3)">Log in</button>
       <div style="text-align:center;margin-top:12px;font-size:12px;color:rgba(255,255,255,0.7);display:flex;justify-content:center;gap:12px;flex-wrap:wrap">
         <div>
           <span id="auth-toggle-text">Don't have an account?</span>
@@ -1770,7 +1770,7 @@ document.addEventListener('DOMContentLoaded',()=>{
         <input id="forgot-email" type="email" placeholder="your@email.com" style="width:100%;padding:8px 10px;border:1px solid rgba(255,255,255,0.4);border-radius:6px;font-size:13px;font-family:var(--sans);outline:none;background:rgba(255,255,255,0.2);color:white;" onkeydown="if(event.key==='Enter')sendResetEmail()"/>
       </div>
       <div id="forgot-msg" style="font-size:12px;min-height:18px;margin-bottom:8px;color:rgba(255,255,255,0.85)"></div>
-      <button onclick="sendResetEmail()" style="width:100%;padding:10px;background:var(--green-dark);color:white;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans);box-shadow:0 2px 8px rgba(0,0,0,0.3)">Send reset link</button>
+      <button onclick="sendResetEmail()" style="width:100%;padding:10px;background:#393768;color:white;border:none;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans);box-shadow:0 2px 8px rgba(0,0,0,0.3)">Send reset link</button>
       <div style="text-align:center;margin-top:12px">
         <button onclick="hideForgotPanel()" style="background:none;border:none;color:rgba(255,255,255,0.8);cursor:pointer;font-size:12px;font-family:var(--sans);font-weight:600;text-decoration:underline">← Back to login</button>
       </div>
@@ -1783,8 +1783,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   <!-- SAVE BAR -->
   <div style="background:var(--paper2);border-bottom:1px solid var(--border);padding:6px 1.5rem;display:flex;align-items:center;gap:10px;flex-wrap:wrap" class="no-print">
     <span style="font-size:12px;color:var(--ink3)">Logged in as <strong id="user-name-display"></strong></span>
-    <button id="save-btn" onclick="saveAnalysis()" style="padding:5px 14px;background:var(--green-dark);color:white;border:none;border-radius:3px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans)">💾 Save</button>
-    <button onclick="toggleDrawer()" style="padding:5px 14px;background:white;color:var(--green-dark);border:1px solid var(--green-light);border-radius:3px;font-size:12px;cursor:pointer;font-family:var(--sans)">📂 My analyses</button>
+    <button id="save-btn" onclick="saveAnalysis()" style="padding:5px 14px;background:#393768;color:white;border:none;border-radius:3px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans)">💾 Save</button>
+    <button onclick="toggleDrawer()" style="padding:5px 14px;background:white;color:#393768;border:1px solid var(--green-light);border-radius:3px;font-size:12px;cursor:pointer;font-family:var(--sans)">📂 My analyses</button>
     <button onclick="newAnalysis()" style="padding:5px 14px;background:white;color:var(--ink2);border:1px solid var(--border);border-radius:3px;font-size:12px;cursor:pointer;font-family:var(--sans)">+ New</button>
     <button onclick="supaSignOut()" style="margin-left:auto;padding:5px 12px;background:none;color:var(--ink3);border:1px solid var(--border);border-radius:3px;font-size:11px;cursor:pointer;font-family:var(--sans)">Sign out</button>
   </div>
@@ -1827,7 +1827,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   const adminPage=document.createElement('div');
   adminPage.className='page';
   adminPage.id='page-admin';
-  adminPage.innerHTML='<div style="font-size:18px;font-weight:600;margin-bottom:1rem;color:var(--green-dark)">All Teachers — Read Only View</div><div id="admin-content"></div>';
+  adminPage.innerHTML='<div style="font-size:18px;font-weight:600;margin-bottom:1rem;color:#393768">All Teachers — Read Only View</div><div id="admin-content"></div>';
   shell.appendChild(adminPage);
 
   showAuthScreen();
