@@ -110,6 +110,8 @@ tr.absent td{opacity:0.4;}
   svg{max-height:130px!important;overflow:hidden!important;}
   table{page-break-inside:auto;}
   tr{page-break-inside:avoid;}
+  thead{display:table-header-group;}
+  tbody{display:table-row-group;}
   /* SPIP: scale to fit on page, landscape */
   #page-spip.pt{
     transform-origin:top left;
@@ -657,6 +659,7 @@ function renderSummary(){
 
     <div style="overflow-x:auto">
       <table style="width:100%;border-collapse:collapse;font-size:11px;font-family:Calibri,Arial">
+        <thead>
         <!-- QUESTION NO row - yellow -->
         <tr>
           <th style="border:1px solid #999;padding:5px 8px;background:#ffff99;text-align:left;font-weight:700;min-width:140px">QUESTION NO.</th>
@@ -694,6 +697,8 @@ function renderSummary(){
           <th style="border:1px solid #999;background:#ffff99;padding:5px"></th>
           <th style="border:1px solid #999;background:#ffff99;padding:5px"></th>
         </tr>
+        </thead>
+        <tbody>
 
         <tbody>
           ${written.map((s,ri)=>{
