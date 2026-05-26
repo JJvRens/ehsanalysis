@@ -616,11 +616,78 @@ function renderSummary(){
       </div>
     </div>
 
-    <!-- FULL CLASS RESULTS -->
-    <div style="margin-top:16px">
-      <div style="font-size:12px;font-weight:700;font-family:Calibri,Arial;margin-bottom:4px;color:#375623">FULL CLASS RESULTS</div>
+    <!-- FULL CLASS RESULTS — Excel-style with page break -->
+    <div style="margin-top:16px;page-break-before:always">
+
+      <!-- Excel-style header block -->
+      <table style="width:100%;border-collapse:collapse;font-size:11px;font-family:Calibri,Arial;border:1px solid #999;margin-bottom:0">
+        <!-- Row 1: TASK | DATE | LOGO -->
+        <tr>
+          <td style="font-weight:700;padding:4px 8px;border:1px solid #999;width:90px">TASK:</td>
+          <td style="padding:4px 8px;border:1px solid #999">${m.task}</td>
+          <td style="font-weight:700;padding:4px 8px;border:1px solid #999;width:60px">DATE:</td>
+          <td style="padding:4px 8px;border:1px solid #999;width:110px">${m.date}</td>
+          <td rowspan="3" style="border:1px solid #999;text-align:center;padding:4px;width:80px">
+            <img src="wapen.jpeg" style="width:64px;height:64px;object-fit:contain" onerror="this.style.display='none'"/>
+          </td>
+        </tr>
+        <!-- Row 2: SUBJECT | GRADE -->
+        <tr>
+          <td style="font-weight:700;padding:4px 8px;border:1px solid #999">SUBJECT:</td>
+          <td style="padding:4px 8px;border:1px solid #999">${m.subject}</td>
+          <td style="font-weight:700;padding:4px 8px;border:1px solid #999">GRADE:</td>
+          <td style="padding:4px 8px;border:1px solid #999;font-weight:700;text-align:center">${m.grade}</td>
+        </tr>
+        <!-- Row 3: EDUCATOR -->
+        <tr>
+          <td style="font-weight:700;padding:4px 8px;border:1px solid #999">EDUCATOR:</td>
+          <td colspan="3" style="padding:4px 8px;border:1px solid #999">${m.educator}</td>
+        </tr>
+        <!-- Row 4: School name centered -->
+        <tr>
+          <td colspan="5" style="text-align:center;padding:6px 8px;border:1px solid #999;font-weight:700;font-size:14px;font-family:'Arial Black',Arial;letter-spacing:1px">${m.school.toUpperCase()}</td>
+        </tr>
+      </table>
+
     <div style="overflow-x:auto">
       <table style="width:100%;border-collapse:collapse;font-size:11px;font-family:Calibri,Arial">
+        <!-- QUESTION NO row - yellow -->
+        <tr>
+          <th style="border:1px solid #999;padding:5px 8px;background:#ffff00;text-align:left;font-weight:700;min-width:140px">QUESTION NO.</th>
+          ${Array.from({length:10},(_,i)=>`<th style="border:1px solid #999;padding:5px 4px;background:#ffff00;text-align:center;font-weight:700;min-width:36px">${i+1}</th>`).join('')}
+          <th style="border:1px solid #999;padding:5px 4px;background:#ffff00;text-align:center;font-weight:700" colspan="2"></th>
+          <th style="border:1px solid #999;padding:5px 4px;background:#ffff00;text-align:center;font-weight:700"></th>
+        </tr>
+        <!-- TOPIC row with rotated headers - yellow -->
+        <tr>
+          <th style="border:1px solid #999;padding:4px 8px;background:#ffff00;text-align:center;font-weight:700;vertical-align:middle">TOPIC</th>
+          ${Array.from({length:10},(_,i)=>{
+            const q=questions[i];
+            return`<th style="border:1px solid #999;background:#ffff00;padding:3px;text-align:center;height:110px;vertical-align:middle">
+              ${q?`<div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:11px;font-weight:700;line-height:1.3;text-align:center;margin:auto">${q.topic}</div>`:''}
+            </th>`;
+          }).join('')}
+          <th style="border:1px solid #999;background:#ffff00;padding:3px;text-align:center;height:110px;vertical-align:middle">
+            <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:11px;font-weight:700;text-align:center;margin:auto">TOTAL</div>
+          </th>
+          <th style="border:1px solid #999;background:#ffff00;padding:3px;text-align:center;height:110px;vertical-align:middle">
+            <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:11px;font-weight:700;text-align:center;margin:auto">%</div>
+          </th>
+          <th style="border:1px solid #999;background:#ffff00;padding:3px;text-align:center;height:110px;vertical-align:middle">
+            <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:11px;font-weight:700;text-align:center;margin:auto">LEVEL</div>
+          </th>
+        </tr>
+        <!-- MARKS PER QUESTION row - yellow -->
+        <tr>
+          <th style="border:1px solid #999;padding:5px 8px;background:#ffff00;text-align:left;font-weight:700">MARKS PER QUESTION</th>
+          ${Array.from({length:10},(_,i)=>{
+            const q=questions[i];
+            return`<th style="border:1px solid #999;padding:5px 4px;background:#ffff00;text-align:center;font-weight:700">${q?q.max:''}</th>`;
+          }).join('')}
+          <th style="border:1px solid #999;padding:5px 4px;background:#ffff00;text-align:center;font-weight:700">${mx}</th>
+          <th style="border:1px solid #999;background:#ffff00;padding:5px"></th>
+          <th style="border:1px solid #999;background:#ffff00;padding:5px"></th>
+        </tr>
         <thead>
           <tr>
             <th style="border:1px solid #999;padding:5px 8px;background:#d6e4bc;text-align:center;min-width:140px">QUESTION</th>
