@@ -607,10 +607,10 @@ function renderSummary(){
     </div>
 
     <!-- BAR CHART — fixed small size, max 8cm tall on print -->
-    <div style="page-break-inside:avoid;page-break-before:avoid;margin-top:4px">
-      <div style="font-size:9px;font-weight:700;background:#1a1a18;color:white;text-align:center;padding:3px;letter-spacing:1px;font-family:Calibri,Arial;max-width:500px">AVERAGE % PER QUESTION</div>
-      <div style="display:flex;align-items:center;max-width:500px">
-        <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:7px;color:#888;font-family:Calibri,Arial;text-align:center;white-space:nowrap;margin-right:1px;flex-shrink:0">PERCENTAGE(%)</div>
+    <div style="page-break-inside:avoid;page-break-before:avoid;margin-top:4px;display:flex;flex-direction:column;align-items:center">
+      <div style="font-size:9px;font-weight:700;background:#1a1a18;color:white;text-align:center;padding:3px;letter-spacing:1px;font-family:Calibri,Arial;width:500px">AVERAGE % PER QUESTION</div>
+      <div style="display:flex;align-items:center;width:500px">
+        <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:7px;font-weight:700;color:#555;font-family:Calibri,Arial;text-align:center;white-space:nowrap;margin-right:1px;flex-shrink:0">PERCENTAGE(%)</div>
         <svg xmlns="http://www.w3.org/2000/svg" width="480" height="120" viewBox="0 0 480 120" style="display:block;flex-shrink:0">
           <defs>${defs}</defs>
           ${(()=>{
@@ -632,7 +632,7 @@ function renderSummary(){
             }).join('');
             return gLines+bars+`<line x1="${cPadL}" y1="8" x2="${cPadL}" y2="${cH+8}" stroke="#aaa" stroke-width="0.8"/>
             <line x1="${cPadL}" y1="${cH+8}" x2="460" y2="${cH+8}" stroke="#aaa" stroke-width="0.8"/>
-            <text x="${(460+cPadL)/2}" y="${cH+8+cPadB}" text-anchor="middle" font-size="7" fill="#888" font-family="Calibri,Arial">QUESTION</text>`;
+            <text x="${(460+cPadL)/2}" y="${cH+8+cPadB}" text-anchor="middle" font-size="7" font-weight="700" fill="#555" font-family="Calibri,Arial">QUESTION</text>`;
           })()}
         </svg>
       </div>
