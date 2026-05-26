@@ -460,6 +460,7 @@ function deleteStudent(si){
 
 // ── ITEM ANALYSIS ──────────────────────────────────────────────────────────
 function renderSummary(){
+  try{
   const mx=getMax();
   const real=students.filter(s=>s.name.trim()&&!isAbsent(s.marks));
   const written=real;
@@ -476,8 +477,9 @@ function renderSummary(){
   const m=getMeta();
 
   // Chart
+  const numQ=questions.length;
   const barW=28,gap=6,chartH=85,svgPadL=28,svgPadB=32;
-  const svgW=svgPadL+(barW+gap)*Math.max(numQ||questions.length,1)+gap+10;
+  const svgW=svgPadL+(barW+gap)*Math.max(numQ,1)+gap+10;
   const svgH=chartH+svgPadB;
   const maxVal=90;
   const gridVals=[0,10,20,30,40,50,60,70,80,90];
@@ -488,7 +490,6 @@ function renderSummary(){
   }).join('');
   const defs=Array.from({length:10},(_,i)=>`<pattern id="hatch${i}" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="7" stroke="#444" stroke-width="2"/></pattern>`).join('');
   // Only draw bars for questions that actually exist
-  const numQ=questions.length;
   const chartW=svgPadL+gap+numQ*(barW+gap);
   const barsSvg=qAvgs.map((item,i)=>{
     const x=svgPadL+gap+i*(barW+gap);
@@ -735,6 +736,7 @@ function renderSummary(){
     </div>  </div>`;
 
   document.getElementById('tab-summary').classList.add('has-data');
+  }catch(e){console.error('renderSummary error:',e);document.getElementById('summary-content').innerHTML='<p style="color:red;padding:1rem">Error: '+e.message+'</p>';}
 }
 
 // ── SPIP ───────────────────────────────────────────────────────────────────
