@@ -608,9 +608,9 @@ function renderSummary(){
       <div style="display:flex;align-items:center">
         <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:10px;color:#555;font-family:Calibri,Arial;text-align:center;white-space:nowrap;margin-right:2px">PERCENTAGE(%)</div>
         <div style="flex:1;max-height:140px;overflow:hidden">
-          <svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 0 ${svgW} ${svgH}" style="display:block;overflow:visible;max-height:130px">
+          <svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="0 -16 ${svgW} ${svgH+16}" style="display:block;overflow:visible;max-height:130px">
             <defs>${defs}</defs>
-            <g transform="translate(0,6)">
+            <g transform="translate(0,16)">
               ${gridLines}${barsSvg}
               <line x1="${svgPadL}" y1="0" x2="${svgPadL}" y2="${chartH}" stroke="#999" stroke-width="1"/>
               <line x1="${svgPadL}" y1="${chartH}" x2="${svgW}" y2="${chartH}" stroke="#999" stroke-width="1"/>
