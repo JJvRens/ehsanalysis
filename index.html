@@ -476,7 +476,7 @@ function renderSummary(){
   const m=getMeta();
 
   // Chart
-  const barW=28,gap=6,chartH=85,svgPadL=28,svgPadB=20;
+  const barW=28,gap=6,chartH=85,svgPadL=28,svgPadB=32;
   const svgW=svgPadL+(barW+gap)*10+gap+10;
   const svgH=chartH+svgPadB;
   const maxVal=90;
@@ -618,7 +618,7 @@ function renderSummary(){
               <line x1="${svgPadL}" y1="${chartH}" x2="${svgW}" y2="${chartH}" stroke="#999" stroke-width="1"/>
             </g>
           </svg>
-          <div style="text-align:center;font-size:10px;color:#555;font-family:Calibri,Arial;padding-left:${svgPadL}px;margin-top:2px">QUESTION</div>
+          <div style="text-align:center;font-size:10px;color:#555;font-family:Calibri,Arial;padding-left:${svgPadL}px;margin-top:6px">QUESTION</div>
         </div>
       </div>
     </div>
