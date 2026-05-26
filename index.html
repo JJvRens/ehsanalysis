@@ -134,7 +134,8 @@ tr.absent td{opacity:0.4;}
     max-width:none!important;
   }
 }
-@page{size:A4 landscape;margin:0.8cm;}
+@page{margin:1.5cm 1.5cm 1.5cm 1.5cm;}
+@page landscape{size:A4 landscape;margin:1cm;}
 @media print and (orientation:portrait){
   #page-spip.pt{
     transform:scale(0.65);
@@ -471,7 +472,7 @@ function renderSummary(){
   const m=getMeta();
 
   // Chart
-  const barW=40,gap=10,chartH=180,svgPadL=38,svgPadB=30;
+  const barW=36,gap=8,chartH=140,svgPadL=34,svgPadB=28;
   const svgW=svgPadL+(barW+gap)*10+gap+10;
   const svgH=chartH+svgPadB;
   const maxVal=90;
@@ -658,22 +659,22 @@ function renderSummary(){
           <th style="border:1px solid #999;padding:5px 4px;background:#ffff99;text-align:center;font-weight:700" colspan="2"></th>
           <th style="border:1px solid #999;padding:5px 4px;background:#ffff99;text-align:center;font-weight:700"></th>
         </tr>
-        <!-- TOPIC row with rotated headers - yellow -->
+        <!-- TOPIC row with rotated headers - WHITE background -->
         <tr>
-          <th style="border:1px solid #999;padding:4px 8px;background:#ffff99;text-align:center;font-weight:700;vertical-align:middle">TOPIC</th>
+          <th style="border:1px solid #999;padding:4px 8px;background:white;text-align:center;font-weight:700;vertical-align:middle">TOPIC</th>
           ${Array.from({length:10},(_,i)=>{
             const q=questions[i];
-            return`<th style="border:1px solid #999;background:#ffff99;padding:3px;text-align:center;height:110px;vertical-align:middle">
+            return`<th style="border:1px solid #999;background:white;padding:3px;text-align:center;height:110px;vertical-align:middle">
               ${q?`<div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:11px;font-weight:700;line-height:1.3;text-align:center;margin:auto">${q.topic}</div>`:''}
             </th>`;
           }).join('')}
-          <th style="border:1px solid #999;background:#ffff99;padding:3px;text-align:center;height:110px;vertical-align:middle">
+          <th style="border:1px solid #999;background:white;padding:3px;text-align:center;height:110px;vertical-align:middle">
             <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:11px;font-weight:700;text-align:center;margin:auto">TOTAL</div>
           </th>
-          <th style="border:1px solid #999;background:#ffff99;padding:3px;text-align:center;height:110px;vertical-align:middle">
+          <th style="border:1px solid #999;background:white;padding:3px;text-align:center;height:110px;vertical-align:middle">
             <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:11px;font-weight:700;text-align:center;margin:auto">%</div>
           </th>
-          <th style="border:1px solid #999;background:#ffff99;padding:3px;text-align:center;height:110px;vertical-align:middle">
+          <th style="border:1px solid #999;background:white;padding:3px;text-align:center;height:110px;vertical-align:middle">
             <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:11px;font-weight:700;text-align:center;margin:auto">LEVEL</div>
           </th>
         </tr>
