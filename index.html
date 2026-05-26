@@ -488,7 +488,7 @@ function renderSummary(){
     return`<line x1="${svgPadL}" y1="${y}" x2="${svgW}" y2="${y}" stroke="#eee" stroke-width="0.5"/>
     <text x="${svgPadL-3}" y="${y+3}" text-anchor="end" font-size="7" fill="#888" font-family="Calibri,Arial">${v}</text>`;
   }).join('');
-  const defs=Array.from({length:10},(_,i)=>`<pattern id="hatch${i}" patternUnits="userSpaceOnUse" width="4" height="4" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="4" stroke="#555" stroke-width="0.8"/></pattern>`).join('');
+  const defs=Array.from({length:10},(_,i)=>`<pattern id="hatch${i}" patternUnits="userSpaceOnUse" width="5" height="5" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="5" stroke="#999" stroke-width="0.4"/></pattern>`).join('');
   // Only draw bars for questions that actually exist
   const chartW=svgPadL+gap+numQ*(barW+gap);
   const barsSvg=qAvgs.map((item,i)=>{
