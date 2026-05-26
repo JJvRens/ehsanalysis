@@ -478,17 +478,17 @@ function renderSummary(){
 
   // Chart
   const numQ=questions.length;
-  const barW=28,gap=6,chartH=85,svgPadL=28,svgPadB=32;
+  const barW=18,gap=8,chartH=60,svgPadL=22,svgPadB=22;
   const svgW=svgPadL+(barW+gap)*Math.max(numQ,1)+gap+10;
   const svgH=chartH+svgPadB;
   const maxVal=90;
   const gridVals=[0,10,20,30,40,50,60,70,80,90];
   const gridLines=gridVals.map(v=>{
     const y=chartH-Math.round(v/maxVal*chartH);
-    return`<line x1="${svgPadL}" y1="${y}" x2="${svgW}" y2="${y}" stroke="#ddd" stroke-width="1"/>
-    <text x="${svgPadL-4}" y="${y+4}" text-anchor="end" font-size="9" fill="#555" font-family="Calibri,Arial">${v}</text>`;
+    return`<line x1="${svgPadL}" y1="${y}" x2="${svgW}" y2="${y}" stroke="#eee" stroke-width="0.5"/>
+    <text x="${svgPadL-3}" y="${y+3}" text-anchor="end" font-size="7" fill="#888" font-family="Calibri,Arial">${v}</text>`;
   }).join('');
-  const defs=Array.from({length:10},(_,i)=>`<pattern id="hatch${i}" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="7" stroke="#444" stroke-width="2"/></pattern>`).join('');
+  const defs=Array.from({length:10},(_,i)=>`<pattern id="hatch${i}" patternUnits="userSpaceOnUse" width="4" height="4" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="4" stroke="#555" stroke-width="0.8"/></pattern>`).join('');
   // Only draw bars for questions that actually exist
   const chartW=svgPadL+gap+numQ*(barW+gap);
   const barsSvg=qAvgs.map((item,i)=>{
@@ -499,9 +499,9 @@ function renderSummary(){
     }
     const bh=Math.max(3,Math.round(item.pct/maxVal*chartH));
     const y=chartH-bh;
-    return`<rect x="${x}" y="${y}" width="${barW}" height="${bh}" fill="url(#hatch${i})" stroke="#333" stroke-width="1"/>
-    <text x="${x+barW/2}" y="${y-4}" text-anchor="middle" font-size="10" font-weight="700" fill="#222" font-family="Calibri,Arial">${item.pct}</text>
-    <text x="${x+barW/2}" y="${labelY}" text-anchor="middle" font-size="10" fill="#555" font-family="Calibri,Arial">${i+1}</text>`;
+    return`<rect x="${x}" y="${y}" width="${barW}" height="${bh}" fill="url(#hatch${i})" stroke="#555" stroke-width="0.5"/>
+    <text x="${x+barW/2}" y="${y-3}" text-anchor="middle" font-size="8" font-weight="700" fill="#222" font-family="Calibri,Arial">${item.pct}</text>
+    <text x="${x+barW/2}" y="${labelY}" text-anchor="middle" font-size="8" fill="#555" font-family="Calibri,Arial">${i+1}</text>`;
   }).join('');
 
   document.getElementById('summary-content').innerHTML=`
@@ -611,11 +611,11 @@ function renderSummary(){
       <svg xmlns="http://www.w3.org/2000/svg" width="100%" viewBox="-2 -4 ${svgW+40} ${svgH+52}" style="display:block;overflow:visible">
         <defs>${defs}</defs>
         <!-- Title bar inside SVG -->
-        <rect x="-2" y="-4" width="${svgW+40}" height="22" fill="#1a1a18"/>
-        <text x="${(svgW+36)/2}" y="12" text-anchor="middle" font-size="11" font-weight="700" fill="white" font-family="Calibri,Arial" letter-spacing="1">AVERAGE % PER QUESTION</text>
+        <rect x="-2" y="-4" width="${svgW+40}" height="16" fill="#1a1a18"/>
+        <text x="${(svgW+36)/2}" y="9" text-anchor="middle" font-size="9" font-weight="700" fill="white" font-family="Calibri,Arial" letter-spacing="1">AVERAGE % PER QUESTION</text>
         <!-- Y axis label -->
-        <text transform="translate(8,${chartH/2+22}) rotate(-90)" text-anchor="middle" font-size="9" fill="#555" font-family="Calibri,Arial">PERCENTAGE(%)</text>
-        <g transform="translate(28,22)">
+        <text transform="translate(6,${chartH/2+22}) rotate(-90)" text-anchor="middle" font-size="7" fill="#888" font-family="Calibri,Arial">PERCENTAGE(%)</text>
+        <g transform="translate(18,16)">
           ${gridLines}${barsSvg}
           <line x1="${svgPadL}" y1="0" x2="${svgPadL}" y2="${chartH}" stroke="#999" stroke-width="1"/>
           <line x1="${svgPadL}" y1="${chartH}" x2="${svgW}" y2="${chartH}" stroke="#999" stroke-width="1"/>
