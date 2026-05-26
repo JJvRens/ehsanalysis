@@ -677,10 +677,10 @@ function renderSummary(){
         <thead>
         <!-- QUESTION NO row - yellow -->
         <tr>
-          <th style="border:1px solid #999;padding:5px 8px;background:#ffff00;text-align:left;font-weight:700;min-width:140px">QUESTION NO.</th>
-          ${Array.from({length:10},(_,i)=>`<th style="border:1px solid #999;padding:5px 4px;background:#ffff00;text-align:center;font-weight:700;min-width:36px">${i+1}</th>`).join('')}
-          <th style="border:1px solid #999;padding:5px 4px;background:#ffff00;text-align:center;font-weight:700" colspan="2"></th>
-          <th style="border:1px solid #999;padding:5px 4px;background:#ffff00;text-align:center;font-weight:700"></th>
+          <th style="border:1px solid #999;padding:5px 8px;background:#ffff99;text-align:left;font-weight:700;min-width:140px">QUESTION NO.</th>
+          ${Array.from({length:10},(_,i)=>`<th style="border:1px solid #999;padding:5px 4px;background:#ffff99;text-align:center;font-weight:700;min-width:36px">${i+1}</th>`).join('')}
+          <th style="border:1px solid #999;padding:5px 4px;background:#ffff99;text-align:center;font-weight:700" colspan="2"></th>
+          <th style="border:1px solid #999;padding:5px 4px;background:#ffff99;text-align:center;font-weight:700"></th>
         </tr>
         <!-- TOPIC row with rotated headers - WHITE background -->
         <tr>
@@ -703,14 +703,14 @@ function renderSummary(){
         </tr>
         <!-- MARKS PER QUESTION row - yellow -->
         <tr>
-          <th style="border:1px solid #999;padding:5px 8px;background:#ffff00;text-align:left;font-weight:700">MARKS PER QUESTION</th>
+          <th style="border:1px solid #999;padding:5px 8px;background:#ffff99;text-align:left;font-weight:700">MARKS PER QUESTION</th>
           ${Array.from({length:10},(_,i)=>{
             const q=questions[i];
-            return`<th style="border:1px solid #999;padding:5px 4px;background:#ffff00;text-align:center;font-weight:700">${q?q.max:''}</th>`;
+            return`<th style="border:1px solid #999;padding:5px 4px;background:#ffff99;text-align:center;font-weight:700">${q?q.max:''}</th>`;
           }).join('')}
-          <th style="border:1px solid #999;padding:5px 4px;background:#ffff00;text-align:center;font-weight:700">${mx}</th>
-          <th style="border:1px solid #999;background:#ffff00;padding:5px"></th>
-          <th style="border:1px solid #999;background:#ffff00;padding:5px"></th>
+          <th style="border:1px solid #999;padding:5px 4px;background:#ffff99;text-align:center;font-weight:700">${mx}</th>
+          <th style="border:1px solid #999;background:#ffff99;padding:5px"></th>
+          <th style="border:1px solid #999;background:#ffff99;padding:5px"></th>
         </tr>
         </thead>
         <tbody>
