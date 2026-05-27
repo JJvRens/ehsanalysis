@@ -242,7 +242,30 @@ tr.absent td{opacity:0.4;}
     <div class="setup-grid">
       <div class="field-group"><label>School name</label><input id="f-school" value="Evander High School" oninput="updateMeta()"/></div>
       <div class="field-group"><label>Educator</label><input id="f-educator" value="Ms J J v Rensburg" oninput="updateMeta()"/></div>
-      <div class="field-group"><label>Subject</label><input id="f-subject" value="Computer Applications Technology" oninput="updateMeta()"/></div>
+      <div class="field-group"><label>Subject</label><input id="f-subject" value="Computer Applications Technology" oninput="onSubjectInput(this.value)" autocomplete="off" list="subject-list"/>
+<datalist id="subject-list">
+  <option value="Accounting"/>
+  <option value="Afrikaans First Additional Language"/>
+  <option value="Business Studies"/>
+  <option value="Computer Applications Technology"/>
+  <option value="Creative Arts"/>
+  <option value="Consumer Studies"/>
+  <option value="Digital Technology"/>
+  <option value="Economic and Management Sciences"/>
+  <option value="Engineering Graphics and Design"/>
+  <option value="English Home Language"/>
+  <option value="Geography"/>
+  <option value="Information Technology"/>
+  <option value="Life Orientation"/>
+  <option value="Life Sciences"/>
+  <option value="Mathematical Literacy"/>
+  <option value="Mathematics"/>
+  <option value="Natural Sciences"/>
+  <option value="Physical Sciences"/>
+  <option value="Social Sciences"/>
+  <option value="Tourism"/>
+  <option value="Visual Arts"/>
+</datalist></div>
       <div class="field-group"><label>Grade</label><input id="f-grade" value="10" oninput="updateMeta()"/></div>
       <div class="field-group"><label>Task</label><input id="f-task" value="Term 1 Theory" oninput="updateMeta()"/></div>
       <div class="field-group"><label>Date</label><input id="f-date" type="date" value="2026-02-23" oninput="updateMeta()"/></div>
@@ -961,7 +984,7 @@ function renderFortnightly(){
   const streamCodes={BCM:'1',Sciences:'2',Languages:'3',Humanities:'4',Technical:'5'};
   const sc=streamCodes[m.stream]||'1';
   const real=students.filter(s=>s.name.trim()&&!isAbsent(s.marks));
-  const subj=m.subject.includes('Computer')?'CAT':m.subject.slice(0,6);
+  const subj=getSubjectAbbr(m.subject);
   const lvlR=[
     {label:'L1',sub:'0-29',min:0,max:29},{label:'L2',sub:'30-39',min:30,max:39},
     {label:'L3',sub:'40-49',min:40,max:49},{label:'L4',sub:'50-59',min:50,max:59},
@@ -1644,6 +1667,49 @@ function toggleDrawer(force){
   const open=force!==undefined?force:d.style.display==='none'||!d.style.display;
   d.style.display=open?'block':'none';
   if(open)loadMyAnalyses();
+}
+
+// ── SUBJECT DATA ────────────────────────────────────────────────────────────
+const SUBJECT_DATA={
+  'Accounting':               {abbr:'ACC', stream:'BCM'},
+  'Afrikaans First Additional Language': {abbr:'AFR FAL', stream:'Languages'},
+  'Business Studies':         {abbr:'BS',  stream:'BCM'},
+  'Computer Applications Technology': {abbr:'CAT', stream:'BCM'},
+  'Creative Arts':            {abbr:'CA',  stream:'Humanities'},
+  'Consumer Studies':         {abbr:'CS',  stream:'Technical'},
+  'Digital Technology':       {abbr:'DT',  stream:'BCM'},
+  'Economic and Management Sciences': {abbr:'EMS', stream:'BCM'},
+  'Engineering Graphics and Design': {abbr:'EGD', stream:'Technical'},
+  'English Home Language':    {abbr:'EHL', stream:'Languages'},
+  'Geography':                {abbr:'GEO', stream:'Humanities'},
+  'Information Technology':   {abbr:'IT',  stream:'BCM'},
+  'Life Orientation':         {abbr:'LO',  stream:'Humanities'},
+  'Life Sciences':            {abbr:'LS',  stream:'Sciences'},
+  'Mathematical Literacy':    {abbr:'Math Lit', stream:'Sciences'},
+  'Mathematics':              {abbr:'Math', stream:'Sciences'},
+  'Natural Sciences':         {abbr:'NS',  stream:'Sciences'},
+  'Physical Sciences':        {abbr:'PS',  stream:'Sciences'},
+  'Social Sciences':          {abbr:'SS',  stream:'Humanities'},
+  'Tourism':                  {abbr:'TOUR', stream:'Humanities'},
+  'Visual Arts':              {abbr:'VA',  stream:'Humanities'},
+};
+
+function getSubjectAbbr(subject){
+  const d=SUBJECT_DATA[subject];
+  if(d)return d.abbr;
+  // Fallback: use first letters of each word
+  return subject.split(' ').map(w=>w[0]||'').join('').toUpperCase().slice(0,6);
+}
+
+function onSubjectInput(val){
+  updateMeta();
+  // If subject matches exactly, auto-set stream
+  const d=SUBJECT_DATA[val];
+  if(d){
+    const streamEl=document.getElementById('f-stream');
+    if(streamEl)streamEl.value=d.stream;
+    updateMeta();
+  }
 }
 
 // ── KEYBOARD NAVIGATION (Excel-style arrow keys) ──────────────────────────
