@@ -1746,6 +1746,7 @@ let _resetToken=null;
 function showResetPasswordScreen(token){
   _resetToken=token;
   document.getElementById('reset-screen').style.display='flex';
+  document.getElementById('reset-screen').style.zIndex='9999';
   document.getElementById('auth-screen').style.display='none';
   document.getElementById('app-shell').style.display='none';
 }
@@ -1851,6 +1852,9 @@ function checkAndHandleAuthHash(){
   // Clear hash immediately
   try{history.replaceState(null,'',window.location.pathname);}catch(e){}
   if(type==='recovery'&&token){
+    // Hide auth screen immediately before showing reset
+    const authEl=document.getElementById('auth-screen');
+    if(authEl)authEl.style.display='none';
     showResetPasswordScreen(token);
     return true;
   } else if(error){
