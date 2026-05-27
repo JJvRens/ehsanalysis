@@ -1840,20 +1840,21 @@ async function sendResetEmail(){
 // ── INIT ────────────────────────────────────────────────────────────────────
 updateMeta();renderQConfig();
 // Show auth screen on load
-document.addEventListener('DOMContentLoaded',()=>{
-  // Check if this is a password reset redirect from Supabase email link
+function checkAndHandleAuthHash(){
   const hash=window.location.hash;
+  if(!hash)return false;
   const params=new URLSearchParams(hash.replace('#',''));
   const type=params.get('type');
   const token=params.get('access_token');
   const error=params.get('error');
   const errorDesc=params.get('error_description');
-  history.replaceState(null,'',window.location.pathname);
+  // Clear hash immediately
+  try{history.replaceState(null,'',window.location.pathname);}catch(e){}
   if(type==='recovery'&&token){
     showResetPasswordScreen(token);
+    return true;
   } else if(error){
     showAuthScreen();
-    // Show friendly error on the auth screen
     setTimeout(()=>{
       const msg=document.getElementById('forgot-msg');
       const panel=document.getElementById('forgot-panel');
@@ -1862,14 +1863,17 @@ document.addEventListener('DOMContentLoaded',()=>{
         authMode.style.display='none';
         panel.style.display='block';
         msg.style.color='#ffb3b3';
-        msg.textContent=errorDesc
-          ?decodeURIComponent(errorDesc.replace(/\+/g,' '))
-          :'Reset link has expired. Please request a new one.';
+        msg.textContent='Reset link has expired. Please request a new one.';
       }
-    },100);
-  } else {
-    showAuthScreen();
+    },200);
+    return true;
   }
+  return false;
+}
+
+// Init runs after all functions are defined
+document.addEventListener('DOMContentLoaded',()=>{
+  if(!checkAndHandleAuthHash())showAuthScreen();
 });
 </script>
 
