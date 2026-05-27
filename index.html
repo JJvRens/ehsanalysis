@@ -334,13 +334,13 @@ tr.absent td{opacity:0.4;}
 <script>
 // ── STATE ──────────────────────────────────────────────────────────────────
 let questions=[
-  {label:"Q1",topic:"Multiple choice",max:5},
-  {label:"Q2",topic:"Matching items",max:3},
-  {label:"Q3",topic:"True/False items",max:2},
-  {label:"Q4",topic:"System Technologies",max:10},
-  {label:"Q5",topic:"Social Implications",max:10},
-  {label:"Q6",topic:"Solution Development",max:5},
-  {label:"Q7",topic:"Integrated Scenario",max:15},
+  {label:"Q1",topic:"Multiple choice",max:5,optional:false},
+  {label:"Q2",topic:"Matching items",max:3,optional:false},
+  {label:"Q3",topic:"True/False items",max:2,optional:false},
+  {label:"Q4",topic:"System Technologies",max:10,optional:false},
+  {label:"Q5",topic:"Social Implications",max:10,optional:false},
+  {label:"Q6",topic:"Solution Development",max:5,optional:false},
+  {label:"Q7",topic:"Integrated Scenario",max:15,optional:false},
 ];
 let students=[
   {name:"Gwebu Onalina",marks:[2,3,2,5,0,3,3]},
@@ -387,7 +387,14 @@ function updateMeta(){meta=getMeta();}
 // ── CALC ───────────────────────────────────────────────────────────────────
 function getMax(){return questions.reduce((a,q)=>a+Number(q.max),0);}
 function getTotal(m){return m.reduce((a,v)=>a+(Number(v)||0),0);}
-function getPct(m){const mx=getMax();return mx?Math.round(getTotal(m)/mx*100):0;}
+function getStudentMax(marks){
+  return questions.reduce((a,q,i)=>{
+    if(!q.optional)return a+Number(q.max);
+    if(Number(marks[i]||0)>0)return a+Number(q.max);
+    return a;
+  },0);
+}
+function getPct(m){const mx=getStudentMax(m)||getMax();return mx?Math.round(getTotal(m)/mx*100):0;}
 function getLevel(p){
   if(p<30)return{l:1,cls:'l1',label:'L1'};
   if(p<40)return{l:2,cls:'l2',label:'L2'};
@@ -403,17 +410,25 @@ function isAbsent(m){return m.every(v=>(Number(v)||0)===0);}
 // ── Q CONFIG ───────────────────────────────────────────────────────────────
 function renderQConfig(){
   document.getElementById('q-rows').innerHTML=questions.map((q,i)=>`
-    <div class="q-row">
+    <div class="q-row" style="grid-template-columns:50px 1fr 70px auto 90px;gap:8px">
       <label>${q.label}</label>
-      <input value="${q.topic}" placeholder="Topic" oninput="questions[${i}].topic=this.value;renderTable()"/>
-      <input type="number" value="${q.max}" min="1" oninput="questions[${i}].max=Number(this.value)||0;renderTable()" style="width:60px"/>
+      <input value="${q.topic}" placeholder="Topic" oninput="questions[${i}].topic=this.value;renderTable();window._spipRendered=false;window._fnRendered=false;"/>
+      <input type="number" value="${q.max}" min="1" oninput="questions[${i}].max=Number(this.value)||0;renderTable();window._spipRendered=false;window._fnRendered=false;" style="width:60px"/>
+      <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--ink2);cursor:pointer;white-space:nowrap">
+        <input type="checkbox" ${q.optional?'checked':''} onchange="questions[${i}].optional=this.checked;renderTable();window._spipRendered=false;" style="cursor:pointer"/>
+        Optional
+      </label>
+      <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;color:var(--ink2);white-space:nowrap">
+        <input type="checkbox" ${q.optional?'checked':''} onchange="questions[${i}].optional=this.checked;renderTable();window._spipRendered=false;" style="cursor:pointer"/>
+        Optional
+      </label>
       <button class="remove-q" onclick="removeQuestion(${i})">✕ remove</button>
     </div>`).join('');
   renderTable();
 }
 function addQuestion(){
   const n=questions.length+1;
-  questions.push({label:`Q${n}`,topic:`Question ${n}`,max:10});
+  questions.push({label:`Q${n}`,topic:`Question ${n}`,max:10,optional:false});
   students.forEach(s=>{while(s.marks.length<questions.length)s.marks.push(0);});
   renderQConfig();
 }
@@ -428,13 +443,14 @@ function renderTable(){
   document.getElementById('mark-thead').innerHTML=`<tr>
     <th style="width:28px;font-size:12px;font-weight:700">#</th>
     <th class="left" style="min-width:170px;font-size:12px;font-weight:700">Learner</th>
-    ${questions.map((q,i)=>`<th title="${q.topic}" style="font-size:12px;font-weight:700">${q.label}<br><span style="font-size:9px;font-weight:400;opacity:0.8">(${q.max})</span></th>`).join('')}
-    <th style="font-size:12px;font-weight:700">Total<br><span style="font-size:9px;font-weight:400;opacity:0.8">(${mx})</span></th>
+    ${questions.map((q,i)=>`<th title="${q.topic}${q.optional?' (Optional)':''}" style="font-size:12px;font-weight:700;${q.optional?'background:#f5f0ff;color:#393768':''}">${q.label}<br><span style="font-size:9px;font-weight:400;opacity:0.8">(${q.max}${q.optional?' OPT':''})</span></th>`).join('')}
+    <th style="font-size:12px;font-weight:700">Total</th>
     <th style="font-size:12px;font-weight:700">%</th>
     <th style="font-size:12px;font-weight:700">Lvl</th>
     <th style="width:28px;font-size:12px;font-weight:700"></th></tr>`;
   document.getElementById('mark-tbody').innerHTML=students.map((s,si)=>{
     const tot=getTotal(s.marks),pct=getPct(s.marks),lv=getLevel(pct),ab=isAbsent(s.marks);
+    const learnerMax=getMaxForLearner(s.marks);
     return`<tr id="row-${si}" class="${ab?'absent':''}">
       <td style="color:var(--ink3);font-family:var(--mono);font-size:10px">${si+1}</td>
       <td class="nc"><input class="ni" value="${s.name}" oninput="students[${si}].name=this.value;window._spipRendered=false;window._fnRendered=false;"/></td>
@@ -490,9 +506,13 @@ function renderSummary(){
   const lvlCounts=[0,0,0,0,0,0,0,0];
   written.forEach(s=>{lvlCounts[getLevel(getPct(s.marks)).l-1]++;});
   const qAvgs=questions.map((q,qi)=>{
-    const vals=written.map(s=>Number(s.marks[qi])||0);
+    // For optional questions: only average learners who actually attempted it
+    const attempted=q.optional
+      ? written.filter(s=>(Number(s.marks[qi])||0)>0)
+      : written;
+    const vals=attempted.map(s=>Number(s.marks[qi])||0);
     const a=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:0;
-    return{q,avg:Math.round(a*10)/10,pct:q.max?Math.round(a/q.max*100):0};
+    return{q,avg:Math.round(a*10)/10,pct:q.max?Math.round(a/q.max*100):0,attempted:attempted.length};
   });
   const m=getMeta();
 
