@@ -1511,9 +1511,154 @@ async function renderAdmin(){
               <span style="color:var(--ink3);font-size:11px">View →</span>
             </div>
           </div>
+          <button onclick="event.stopPropagation();printAdminFortnightly(\'${a.id}\')" style="flex-shrink:0;margin-top:4px;padding:5px 12px;background:#393768;color:white;border:none;border-radius:3px;font-size:11px;cursor:pointer;font-family:var(--sans)">⎙ Fortnightly</button>
         </div>`;
       }).join('')}
     </div>`).join('');
+}
+
+function printAdminFortnightly(analysisId){
+  const a=window._adminAnalyses?.find(x=>x.id===analysisId);
+  if(!a)return;
+  let qs=[],ss=[];
+  try{qs=JSON.parse(a.questions);}catch{}
+  try{ss=JSON.parse(a.students);}catch{}
+  const mx=qs.reduce((t,q)=>t+Number(q.max),0);
+  function getPctA(marks){return mx?Math.round(marks.reduce((a,v)=>a+(Number(v)||0),0)/mx*100):0;}
+  function getLevelA(p){
+    if(p<30)return{l:1,cls:'l1',label:'L1'};if(p<40)return{l:2,cls:'l2',label:'L2'};
+    if(p<50)return{l:3,cls:'l3',label:'L3'};if(p<60)return{l:4,cls:'l4',label:'L4'};
+    if(p<70)return{l:5,cls:'l5',label:'L5'};if(p<80)return{l:6,cls:'l6',label:'L6'};
+    if(p<90)return{l:7,cls:'l7',label:'L7'};return{l:8,cls:'l8',label:'L8'};
+  }
+  function isAbsentA(marks){return marks.every(v=>(Number(v)||0)===0);}
+  const real=ss.filter(s=>s.name&&!isAbsentA(s.marks));
+  const subj=getSubjectAbbr(a.subject||a.profiles?.subject||'');
+  const educator=a.profiles?.full_name||'';
+  const school=a.profiles?.school||'Evander High School';
+  const task=a.task||'';
+  const date=a.date||'';
+  const grade=a.grade||a.profiles?.grade||'';
+  const stream=a.stream||'';
+  const target=Number(a.target)||50;
+  const circuit=a.circuit||'';
+
+  // Stream codes table
+  const streamCodes=[
+    {name:'BCM',code:1},{name:'Sciences',code:2},{name:'Languages',code:3},
+    {name:'Humanities',code:4},{name:'Technical',code:5}
+  ];
+  const streamCodesHTML=streamCodes.map(s=>`<td style="border:1px solid #999;padding:3px 8px;text-align:center;font-size:10px">${s.code}</td>`).join('');
+
+  // Learner rows
+  const lvlCounts=[0,0,0,0,0,0,0,0];
+  real.forEach(s=>{lvlCounts[getLevelA(getPctA(s.marks)).l-1]++;});
+  const learnerRows=real.map((s,i)=>{
+    const pct=getPctA(s.marks);
+    const lv=getLevelA(pct);
+    lvlCounts[lv.l-1];
+    const bg=i%2===0?'white':'#f5f8f5';
+    return`<tr style="background:${bg}">
+      <td style="border:1px solid #ccc;padding:3px 6px;text-align:center;font-size:10px">${i+1}</td>
+      <td style="border:1px solid #ccc;padding:3px 8px;font-size:10px;background:#d6f0d6">${s.name}</td>
+      <td style="border:1px solid #ccc;padding:3px 6px;text-align:center;font-size:10px">${subj}</td>
+      <td style="border:1px solid #ccc;padding:3px 6px;text-align:center;font-size:10px">${pct>=target?pct+'%':''}</td>
+      <td style="border:1px solid #ccc;padding:3px 6px;text-align:center;font-size:10px">${pct>=target?'':pct+'%'}</td>
+      <td style="border:1px solid #ccc;padding:3px 6px;text-align:center;font-size:10px">${pct}%</td>
+      <td style="border:1px solid #ccc;padding:3px 6px;text-align:center;font-size:10px;font-weight:700">${lv.label}</td>
+    </tr>`;
+  }).join('');
+
+  const win=window.open('','_blank');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"/>
+    <title>Fortnightly Report - ${educator}</title>
+    <style>
+      *{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+      body{font-family:Arial,sans-serif;font-size:11px;padding:16px;}
+      @media print{@page{margin:1cm;}}
+      .lb{display:inline-block;padding:1px 5px;border-radius:2px;font-size:9px;font-weight:700;}
+      .l1{background:#fde8e8;color:#7a1a1a;}.l2{background:#fdf0dc;color:#6b3d00;}
+      .l3{background:#fff8dc;color:#5a4200;}.l4{background:#deeeff;color:#0d3d7a;}
+      .l5{background:#deeeff;color:#0d3d7a;}.l6{background:#e4f0e4;color:#1a4d2a;}
+      .l7{background:#d0e8d8;color:#0f3d20;}.l8{background:#b8dccc;color:#0a2d18;}
+    </style>
+  </head><body>
+    <!-- GOV HEADER -->
+    <table style="width:100%;border-bottom:2px solid #1a5276;margin-bottom:6px;padding-bottom:6px;border-collapse:collapse">
+      <tr>
+        <td style="width:220px;vertical-align:middle">
+          <img src="https://ehsanalysis.pages.dev/gov.png" style="height:60px;object-fit:contain" onerror="this.style.display='none'"/>
+        </td>
+        <td style="font-size:10px;color:#444;vertical-align:middle">
+          Building No. 5, Government Boulevard, Riverside Park, Mpumalanga Province<br>
+          Private Bag X11341, Mbombela, 1200<br>
+          Tel: 013 766 55552/5115, Toll Free Line: 0800 203 116
+        </td>
+      </tr>
+    </table>
+    <table style="width:100%;border-collapse:collapse;margin-bottom:4px">
+      <tr>
+        <td style="font-size:10px;font-style:italic;color:#444;width:33%">Litiko le Temfundvo, Umnyango we Fundo</td>
+        <td style="font-size:10px;font-style:italic;color:#444;text-align:center;width:34%">Department van Onderwys</td>
+        <td style="font-size:10px;font-style:italic;color:#444;text-align:right;width:33%">Ndzawulo ya Dyondzo</td>
+      </tr>
+    </table>
+    <div style="text-align:center;margin-bottom:8px">
+      <div style="font-weight:700;font-size:13px">90% - 100% Schools</div>
+      <div style="font-weight:700;font-size:14px">Fortnightly Report</div>
+      <div style="font-weight:700;font-size:12px">Analysis of learner performance according to their streams</div>
+    </div>
+    <!-- SCHOOL DETAILS -->
+    <table style="width:100%;border-collapse:collapse;font-size:11px;margin-bottom:6px">
+      <tr style="line-height:2"><td style="width:140px;font-weight:700">NAME OF SCHOOL:</td><td style="width:240px">${school}</td><td style="width:70px;font-weight:700">CIRCUIT:</td><td>${circuit}</td></tr>
+      <tr style="line-height:2"><td style="font-weight:700">EDUCATOR:</td><td>${educator}</td><td style="font-weight:700">GRADE:</td><td>${grade}</td></tr>
+      <tr style="line-height:2"><td style="font-weight:700">SUBJECT:</td><td>${subj}</td><td style="font-weight:700">STREAM:</td><td>${stream}</td></tr>
+      <tr style="line-height:2"><td style="font-weight:700">TASK:</td><td colspan="3">${task}</td></tr>
+      <tr style="line-height:2"><td style="font-weight:700">DATE:</td><td colspan="3">${date}</td></tr>
+    </table>
+    <!-- STREAM CODES -->
+    <table style="width:100%;border-collapse:collapse;margin-bottom:8px;font-size:10px">
+      <tr>
+        <td style="border:1px solid #999;padding:3px 8px;font-weight:700;background:#d6e4bc">Stream</td>
+        <td style="border:1px solid #999;padding:3px 8px;text-align:center;background:#d6e4bc">BCM</td>
+        <td style="border:1px solid #999;padding:3px 8px;text-align:center;background:#d6e4bc">Sciences</td>
+        <td style="border:1px solid #999;padding:3px 8px;text-align:center;background:#d6e4bc">Languages</td>
+        <td style="border:1px solid #999;padding:3px 8px;text-align:center;background:#d6e4bc">Humanities</td>
+        <td style="border:1px solid #999;padding:3px 8px;text-align:center;background:#d6e4bc">Technical</td>
+      </tr>
+      <tr>
+        <td style="border:1px solid #999;padding:3px 8px;font-weight:700;background:#e8f0bc">Code</td>
+        <td style="border:1px solid #999;padding:3px 8px;text-align:center">1</td>
+        <td style="border:1px solid #999;padding:3px 8px;text-align:center">2</td>
+        <td style="border:1px solid #999;padding:3px 8px;text-align:center">3</td>
+        <td style="border:1px solid #999;padding:3px 8px;text-align:center">4</td>
+        <td style="border:1px solid #999;padding:3px 8px;text-align:center">5</td>
+      </tr>
+    </table>
+    <!-- LEARNER TABLE -->
+    <table style="width:100%;border-collapse:collapse;font-size:11px">
+      <thead><tr>
+        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 6px;text-align:center">#</th>
+        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 6px;text-align:center">L1</th>
+        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 6px;text-align:center">L2</th>
+        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 6px;text-align:center">L3</th>
+        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 6px;text-align:center">L4</th>
+        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 6px;text-align:center">L5</th>
+        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 6px;text-align:center">L6</th>
+        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 6px;text-align:center">L7</th>
+        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 6px;text-align:center">L8</th>
+        <th style="background:#4472c4;color:white;border:1px solid #999;padding:4px 6px;text-align:left">LEARNER NAME</th>
+        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 6px;text-align:center">SUBJECT</th>
+        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 6px;text-align:center">≥${target}%</th>
+        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 6px;text-align:center">&lt;${target}%</th>
+        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 6px;text-align:center">%</th>
+        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 6px;text-align:center">LEVEL</th>
+      </tr></thead>
+      <tbody>${learnerRows}</tbody>
+    </table>
+  </body></html>`);
+  win.document.close();
+  setTimeout(()=>win.print(),600);
 }
 
 function showAdminDetail(analysisId){
