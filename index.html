@@ -1756,7 +1756,8 @@ async function submitResetPassword(){
   if(!pwd){msg.style.color='#ffb3b3';msg.textContent='Please enter a new password.';return;}
   msg.style.color='rgba(255,255,255,0.85)';msg.textContent='Updating...';
   try{
-    const res=await fetch(SUPA_URL+'/auth/v1/user',{
+    // First try using token as JWT bearer
+    let res=await fetch(SUPA_URL+'/auth/v1/user',{
       method:'PUT',
       headers:{
         'apikey':SUPA_ANON,
@@ -1765,6 +1766,27 @@ async function submitResetPassword(){
       },
       body:JSON.stringify({password:pwd})
     });
+    // If JWT fails, try OTP verification flow
+    if(!res.ok){
+      const otpRes=await fetch(SUPA_URL+'/auth/v1/verify',{
+        method:'POST',
+        headers:{'apikey':SUPA_ANON,'Content-Type':'application/json'},
+        body:JSON.stringify({type:'recovery',token:_resetToken})
+      });
+      const otpData=await otpRes.json();
+      if(otpRes.ok&&otpData.access_token){
+        // Now use the real JWT to update password
+        res=await fetch(SUPA_URL+'/auth/v1/user',{
+          method:'PUT',
+          headers:{
+            'apikey':SUPA_ANON,
+            'Authorization':'Bearer '+otpData.access_token,
+            'Content-Type':'application/json'
+          },
+          body:JSON.stringify({password:pwd})
+        });
+      }
+    }
     const data=await res.json();
     if(res.ok){
       msg.style.color='#90ee90';
@@ -1776,7 +1798,7 @@ async function submitResetPassword(){
       },2000);
     } else {
       msg.style.color='#ffb3b3';
-      msg.textContent=data.error_description||data.msg||'Could not update password.';
+      msg.textContent=data.error_description||data.msg||'Could not update password. Try requesting a new link.';
     }
   }catch(e){
     msg.style.color='#ffb3b3';
