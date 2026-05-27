@@ -218,7 +218,7 @@ tr.absent td{opacity:0.4;}
 <!-- MARK ENTRY -->
 <div class="page active" id="page-entry" style="position:relative">
   <!-- Faint watermark -->
-  <div class="watermark-bg" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:0;opacity:0.06">
+  <div class="watermark-bg" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:0;opacity:0.12">
     <img src="wapen.jpeg" style="width:500px;height:500px;object-fit:contain"/>
   </div>
 
@@ -811,9 +811,9 @@ function renderSpip(){
     {t:'MONITORING By DH/DP/Principal (comment on the progress)',w:'65px',rotate:true},
   ];
   const thHTML=headers.map(h=>{
-    if(!h.rotate)return`<th style="border:1px solid #999;background:#393768;color:white;padding:6px 3px;font-size:10px;width:${h.w};text-align:center;vertical-align:middle">${h.t}</th>`;
-    return`<th style="border:1px solid #999;background:#393768;color:white;padding:3px;width:${h.w};height:110px;vertical-align:middle;text-align:center">
-      <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:9.5px;font-weight:600;line-height:1.3;white-space:normal;font-family:Arial">${h.t}</div>
+    if(!h.rotate)return`<th style="border:1px solid #393768;background:white;color:#393768;padding:6px 3px;font-size:10px;font-weight:700;width:${h.w};text-align:center;vertical-align:middle">${h.t}</th>`;
+    return`<th style="border:1px solid #393768;background:white;color:#393768;padding:3px;width:${h.w};height:110px;vertical-align:middle;text-align:center">
+      <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:9.5px;font-weight:700;line-height:1.3;white-space:normal;font-family:Arial;text-align:center;margin:auto">${h.t}</div>
     </th>`;
   }).join('');
 
