@@ -450,7 +450,7 @@ function renderTable(){
     <th style="width:28px;font-size:12px;font-weight:700"></th></tr>`;
   document.getElementById('mark-tbody').innerHTML=students.map((s,si)=>{
     const tot=getTotal(s.marks),pct=getPct(s.marks),lv=getLevel(pct),ab=isAbsent(s.marks);
-    const learnerMax=getMaxForLearner(s.marks);
+    const learnerMax=getStudentMax(s.marks);
     return`<tr id="row-${si}" class="${ab?'absent':''}">
       <td style="color:var(--ink3);font-family:var(--mono);font-size:10px">${si+1}</td>
       <td class="nc"><input class="ni" value="${s.name}" oninput="students[${si}].name=this.value;window._spipRendered=false;window._fnRendered=false;"/></td>
