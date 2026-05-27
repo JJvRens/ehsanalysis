@@ -1824,10 +1824,27 @@ document.addEventListener('DOMContentLoaded',()=>{
   const params=new URLSearchParams(hash.replace('#',''));
   const type=params.get('type');
   const token=params.get('access_token');
+  const error=params.get('error');
+  const errorDesc=params.get('error_description');
+  history.replaceState(null,'',window.location.pathname);
   if(type==='recovery'&&token){
-    // Clear the hash from URL so it doesn't persist
-    history.replaceState(null,'',window.location.pathname);
     showResetPasswordScreen(token);
+  } else if(error){
+    showAuthScreen();
+    // Show friendly error on the auth screen
+    setTimeout(()=>{
+      const msg=document.getElementById('forgot-msg');
+      const panel=document.getElementById('forgot-panel');
+      const authMode=document.getElementById('auth-mode');
+      if(msg&&panel&&authMode){
+        authMode.style.display='none';
+        panel.style.display='block';
+        msg.style.color='#ffb3b3';
+        msg.textContent=errorDesc
+          ?decodeURIComponent(errorDesc.replace(/\+/g,' '))
+          :'Reset link has expired. Please request a new one.';
+      }
+    },100);
   } else {
     showAuthScreen();
   }
