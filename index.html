@@ -148,6 +148,11 @@ tr.absent td{opacity:0.4;}
     font-size:14px!important;
     font-weight:700!important;
   }
+  /* Make textarea content visible on print */
+  #spip-render textarea{
+    overflow:visible!important;
+    height:auto!important;
+  }
 }
 @page{margin:1.5cm 1.5cm 1.5cm 1.5cm;}
 @page landscape{size:A4 landscape;margin:1cm;}
@@ -1049,7 +1054,23 @@ function printPage(){
   set('ph-school',m.school);set('ph-task',m.task);set('ph-date',m.date);
   set('ph-subject',m.subject);set('ph-educator',m.educator);
   set('ph-grade','Grade '+m.grade);set('ph-circuit',m.circuit);set('ph-stream',m.stream);
+
+  // Replace textareas with divs so content prints correctly
+  const textareas=document.querySelectorAll('#spip-render textarea');
+  textareas.forEach(ta=>{
+    const div=document.createElement('div');
+    div.className='ta-print-div';
+    div.textContent=ta.value;
+    div.style.cssText='font-size:11px;font-family:Arial,sans-serif;white-space:pre-wrap;min-height:40px;width:100%;';
+    ta.style.display='none';
+    ta.parentNode.insertBefore(div,ta.nextSibling);
+  });
+
   window.print();
+
+  // Restore textareas after printing
+  document.querySelectorAll('.ta-print-div').forEach(d=>d.remove());
+  textareas.forEach(ta=>ta.style.display='');
 }
 
 // ── EXCEL IMPORT ───────────────────────────────────────────────────────────
