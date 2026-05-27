@@ -784,16 +784,16 @@ function renderSpip(){
         <div style="font-weight:700;font-size:11px;color:#5a3a00">${tl}</div>
         <div style="font-size:10px;color:#999;margin-top:3px">Class avg: ${item.pct}%</div>
       </td>
-      <td style="border:1px solid #bbb;padding:3px;vertical-align:top;width:85px"><textarea id="spip-challenges-${i}" style="${taS}" placeholder="Describe exact challenges observed in this topic..." oninput="saveSpipValues()"></textarea></td>
-      <td style="border:1px solid #bbb;padding:3px;background:#f0f4ff;vertical-align:top;width:75px"><textarea id="spip-targeted-${i}" style="${taS}" placeholder="e.g. Level 1–3 learners (approx. ${atRiskCount})" oninput="saveSpipValues()"></textarea></td>
-      <td style="border:1px solid #bbb;padding:3px;background:#f0fff4;vertical-align:top;width:100px">
+      <td style="border:1px solid #000;padding:3px;vertical-align:top;width:85px"><textarea id="spip-challenges-${i}" style="${taS}" placeholder="Describe exact challenges observed in this topic..." oninput="saveSpipValues()"></textarea></td>
+      <td style="border:1px solid #000;padding:3px;background:#f0f4ff;vertical-align:top;width:75px"><textarea id="spip-targeted-${i}" style="${taS}" placeholder="e.g. Level 1–3 learners (approx. ${atRiskCount})" oninput="saveSpipValues()"></textarea></td>
+      <td style="border:1px solid #000;padding:3px;background:#f0fff4;vertical-align:top;width:100px">
         <textarea id="intervention-${i}" style="${taS}" placeholder="Describe intervention strategy / activity..." oninput="saveSpipValues()"></textarea>
       </td>
-      <td style="border:1px solid #bbb;padding:3px;vertical-align:top;width:75px"><textarea id="spip-indicator-${i}" style="${taS}" placeholder="e.g. Learners achieve ≥${m.target}% in next assessment..." oninput="saveSpipValues()"></textarea></td>
-      <td style="border:1px solid #bbb;padding:3px;vertical-align:top;width:75px"><textarea id="spip-responsibility-${i}" style="${taS}" placeholder="e.g. Educator, HOD, SBST..." oninput="saveSpipValues()"></textarea></td>
-      <td style="border:1px solid #bbb;padding:3px;vertical-align:top;width:65px"><textarea id="spip-timelines-${i}" style="${taS}" placeholder="Specific date and time..." oninput="saveSpipValues()"></textarea></td>
-      <td style="border:1px solid #bbb;padding:3px;vertical-align:top;width:65px"><textarea id="spip-progress-${i}" style="${taS}" placeholder="Date completed..." oninput="saveSpipValues()"></textarea></td>
-      <td style="border:1px solid #bbb;padding:3px;vertical-align:top;width:65px"><textarea id="spip-monitoring-${i}" style="${taS}" placeholder="DH/DP/Principal comment..." oninput="saveSpipValues()"></textarea></td>
+      <td style="border:1px solid #000;padding:3px;vertical-align:top;width:75px"><textarea id="spip-indicator-${i}" style="${taS}" placeholder="e.g. Learners achieve ≥${m.target}% in next assessment..." oninput="saveSpipValues()"></textarea></td>
+      <td style="border:1px solid #000;padding:3px;vertical-align:top;width:75px"><textarea id="spip-responsibility-${i}" style="${taS}" placeholder="e.g. Educator, HOD, SBST..." oninput="saveSpipValues()"></textarea></td>
+      <td style="border:1px solid #000;padding:3px;vertical-align:top;width:65px"><textarea id="spip-timelines-${i}" style="${taS}" placeholder="Specific date and time..." oninput="saveSpipValues()"></textarea></td>
+      <td style="border:1px solid #000;padding:3px;vertical-align:top;width:65px"><textarea id="spip-progress-${i}" style="${taS}" placeholder="Date completed..." oninput="saveSpipValues()"></textarea></td>
+      <td style="border:1px solid #000;padding:3px;vertical-align:top;width:65px"><textarea id="spip-monitoring-${i}" style="${taS}" placeholder="DH/DP/Principal comment..." oninput="saveSpipValues()"></textarea></td>
     </tr>`;
   }).join('');
 
@@ -811,8 +811,8 @@ function renderSpip(){
     {t:'MONITORING By DH/DP/Principal (comment on the progress)',w:'65px',rotate:true},
   ];
   const thHTML=headers.map(h=>{
-    if(!h.rotate)return`<th style="border:1px solid #393768;background:white;color:#393768;padding:6px 3px;font-size:10px;font-weight:700;width:${h.w};text-align:center;vertical-align:middle">${h.t}</th>`;
-    return`<th style="border:1px solid #393768;background:white;color:#393768;padding:3px;width:${h.w};height:110px;vertical-align:middle;text-align:center">
+    if(!h.rotate)return`<th style="border:1px solid #000;background:white;color:#000;padding:6px 3px;font-size:10px;font-weight:700;width:${h.w};text-align:center;vertical-align:middle">${h.t}</th>`;
+    return`<th style="border:1px solid #000;background:white;color:#000;padding:3px;width:${h.w};height:110px;vertical-align:middle;text-align:center">
       <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:9.5px;font-weight:700;line-height:1.3;white-space:normal;font-family:Arial;text-align:center;margin:auto">${h.t}</div>
     </th>`;
   }).join('');
@@ -820,7 +820,7 @@ function renderSpip(){
   document.getElementById('spip-render').innerHTML=`
   <div style="background:white;font-family:Arial,sans-serif;padding:16px;border:1px solid var(--border);border-radius:4px;max-width:1100px">
     <!-- HEADER -->
-    <table style="width:100%;border-collapse:collapse;border:2px solid var(--ink);margin-bottom:10px">
+    <table style="width:100%;border-collapse:collapse;border:2px solid #000;margin-bottom:10px">
       <tr>
         <td style="width:110px;padding:8px;border-right:2px solid var(--ink);text-align:center;vertical-align:middle">
           <img src="wapen.jpeg" style="width:80px;height:80px;object-fit:contain" onerror="this.style.display='none'"/>
