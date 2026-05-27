@@ -112,6 +112,7 @@ tr.absent td{opacity:0.4;}
   tr{page-break-inside:avoid;}
   thead{display:table-header-group;}
   tbody{display:table-row-group;}
+  .watermark-bg{display:block!important;position:fixed!important;}
   /* SPIP: scale to fit on page, landscape */
   #page-spip.pt{
     transform-origin:top left;
@@ -215,10 +216,14 @@ tr.absent td{opacity:0.4;}
 </div>
 
 <!-- MARK ENTRY -->
-<div class="page active" id="page-entry">
+<div class="page active" id="page-entry" style="position:relative">
+  <!-- Faint watermark -->
+  <div class="watermark-bg" style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:0;opacity:0.06">
+    <img src="wapen.jpeg" style="width:500px;height:500px;object-fit:contain"/>
+  </div>
 
   <!-- SCREEN-ONLY: setup controls -->
-  <div class="no-print">
+  <div class="no-print" style="position:relative;z-index:1">
     <div class="setup-grid">
       <div class="field-group"><label>School name</label><input id="f-school" value="Evander High School" oninput="updateMeta()"/></div>
       <div class="field-group"><label>Educator</label><input id="f-educator" value="Ms J J v Rensburg" oninput="updateMeta()"/></div>
@@ -287,7 +292,7 @@ tr.absent td{opacity:0.4;}
   </div>
 
   <!-- MARK TABLE — shows on screen and print -->
-  <div class="table-wrap">
+  <div class="table-wrap" style="position:relative;z-index:1">
     <table class="et"><thead id="mark-thead"></thead><tbody id="mark-tbody"></tbody></table>
   </div>
   <div class="no-print" style="display:flex;gap:8px;margin-top:8px;align-items:center">
