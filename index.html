@@ -1550,22 +1550,19 @@ function printAdminFortnightly(analysisId){
   ];
   const streamCodesHTML=streamCodes.map(s=>`<td style="border:1px solid #999;padding:3px 8px;text-align:center;font-size:10px">${s.code}</td>`).join('');
 
-  // Learner rows
-  const lvlCounts=[0,0,0,0,0,0,0,0];
-  real.forEach(s=>{lvlCounts[getLevelA(getPctA(s.marks)).l-1]++;});
+  // Learner rows - matching original fortnightly format
   const learnerRows=real.map((s,i)=>{
     const pct=getPctA(s.marks);
     const lv=getLevelA(pct);
-    lvlCounts[lv.l-1];
     const bg=i%2===0?'white':'#f5f8f5';
+    // Place % in the correct level column (L1-L8)
+    const lvCells=[1,2,3,4,5,6,7,8].map(l=>`<td style="border:1px solid #ccc;padding:3px 4px;text-align:center;font-size:10px">${lv.l===l?pct+'%':''}</td>`).join('');
     return`<tr style="background:${bg}">
-      <td style="border:1px solid #ccc;padding:3px 6px;text-align:center;font-size:10px">${i+1}</td>
-      <td style="border:1px solid #ccc;padding:3px 8px;font-size:10px;background:#d6f0d6">${s.name}</td>
-      <td style="border:1px solid #ccc;padding:3px 6px;text-align:center;font-size:10px">${subj}</td>
-      <td style="border:1px solid #ccc;padding:3px 6px;text-align:center;font-size:10px">${pct>=target?pct+'%':''}</td>
-      <td style="border:1px solid #ccc;padding:3px 6px;text-align:center;font-size:10px">${pct>=target?'':pct+'%'}</td>
-      <td style="border:1px solid #ccc;padding:3px 6px;text-align:center;font-size:10px">${pct}%</td>
-      <td style="border:1px solid #ccc;padding:3px 6px;text-align:center;font-size:10px;font-weight:700">${lv.label}</td>
+      <td style="border:1px solid #ccc;padding:3px 4px;text-align:center;font-size:10px">${i+1}</td>
+      ${lvCells}
+      <td style="border:1px solid #ccc;padding:3px 8px;font-size:10px;background:#d6f0d6;min-width:150px">${s.name}</td>
+      <td style="border:1px solid #ccc;padding:3px 4px;text-align:center;font-size:10px">${subj}</td>
+      <td style="border:1px solid #ccc;padding:3px 4px;text-align:center;font-size:10px">${pct}%</td>
     </tr>`;
   }).join('');
 
@@ -1636,23 +1633,20 @@ function printAdminFortnightly(analysisId){
       </tr>
     </table>
     <!-- LEARNER TABLE -->
-    <table style="width:100%;border-collapse:collapse;font-size:11px">
+    <table style="width:100%;border-collapse:collapse;font-size:10px">
       <thead><tr>
-        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 6px;text-align:center">#</th>
-        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 6px;text-align:center">L1</th>
-        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 6px;text-align:center">L2</th>
-        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 6px;text-align:center">L3</th>
-        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 6px;text-align:center">L4</th>
-        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 6px;text-align:center">L5</th>
-        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 6px;text-align:center">L6</th>
-        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 6px;text-align:center">L7</th>
-        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 6px;text-align:center">L8</th>
+        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 4px;text-align:center;width:24px">#</th>
+        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 4px;text-align:center;width:40px">L1</th>
+        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 4px;text-align:center;width:40px">L2</th>
+        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 4px;text-align:center;width:40px">L3</th>
+        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 4px;text-align:center;width:40px">L4</th>
+        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 4px;text-align:center;width:40px">L5</th>
+        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 4px;text-align:center;width:40px">L6</th>
+        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 4px;text-align:center;width:40px">L7</th>
+        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 4px;text-align:center;width:40px">L8</th>
         <th style="background:#4472c4;color:white;border:1px solid #999;padding:4px 6px;text-align:left">LEARNER NAME</th>
-        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 6px;text-align:center">SUBJECT</th>
-        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 6px;text-align:center">≥${target}%</th>
-        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 6px;text-align:center">&lt;${target}%</th>
-        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 6px;text-align:center">%</th>
-        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 6px;text-align:center">LEVEL</th>
+        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 4px;text-align:center;width:50px">SUBJECT</th>
+        <th style="background:#9dc3e6;border:1px solid #999;padding:4px 4px;text-align:center;width:40px">%</th>
       </tr></thead>
       <tbody>${learnerRows}</tbody>
     </table>
