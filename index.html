@@ -410,17 +410,13 @@ function isAbsent(m){return m.every(v=>(Number(v)||0)===0);}
 // ── Q CONFIG ───────────────────────────────────────────────────────────────
 function renderQConfig(){
   document.getElementById('q-rows').innerHTML=questions.map((q,i)=>`
-    <div class="q-row" style="grid-template-columns:50px 1fr 70px auto 90px;gap:8px">
+    <div class="q-row" style="grid-template-columns:50px 1fr 60px auto auto;gap:6px;align-items:center">
       <label>${q.label}</label>
       <input value="${q.topic}" placeholder="Topic" oninput="questions[${i}].topic=this.value;renderTable();window._spipRendered=false;window._fnRendered=false;"/>
-      <input type="number" value="${q.max}" min="1" oninput="questions[${i}].max=Number(this.value)||0;renderTable();window._spipRendered=false;window._fnRendered=false;" style="width:60px"/>
-      <label style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--ink2);cursor:pointer;white-space:nowrap">
-        <input type="checkbox" ${q.optional?'checked':''} onchange="questions[${i}].optional=this.checked;renderTable();window._spipRendered=false;" style="cursor:pointer"/>
-        Optional
-      </label>
-      <label style="display:flex;align-items:center;gap:4px;font-size:11px;cursor:pointer;color:var(--ink2);white-space:nowrap">
-        <input type="checkbox" ${q.optional?'checked':''} onchange="questions[${i}].optional=this.checked;renderTable();window._spipRendered=false;" style="cursor:pointer"/>
-        Optional
+      <input type="number" value="${q.max}" min="1" oninput="questions[${i}].max=Number(this.value)||0;renderTable();window._spipRendered=false;window._fnRendered=false;" style="width:56px"/>
+      <label style="display:flex;align-items:center;gap:3px;font-size:10px;color:var(--ink3);cursor:pointer;white-space:nowrap;opacity:0.7">
+        <input type="checkbox" ${q.optional?'checked':''} onchange="questions[${i}].optional=this.checked;renderTable();window._spipRendered=false;" style="cursor:pointer;width:12px;height:12px"/>
+        opt
       </label>
       <button class="remove-q" onclick="removeQuestion(${i})">✕ remove</button>
     </div>`).join('');
