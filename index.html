@@ -1314,7 +1314,8 @@ async function saveAnalysis(){
       body:JSON.stringify({
         id:currentUser.id,
         full_name:m.educator,
-        school:m.school
+        school:m.school,
+        email:currentUser.email||''
       })
     });
     if(!profRes.ok){
