@@ -1111,75 +1111,83 @@ function importFromExcel(input){
       try{
         const data=new Uint8Array(e.target.result);
         const wb=XLSX.read(data,{type:'array'});
-        // Use first sheet
         const ws=wb.Sheets[wb.SheetNames[0]];
         const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
 
-        // Find the column most likely to contain learner names:
-        // Score each column — a "name" column has mostly strings with spaces or
-        // two words, few numbers, at least 5 non-empty values
         if(!rows||rows.length<2){
           status.textContent='Could not read rows from this file.';
           status.style.color='var(--red)';return;
         }
 
-        // Determine number of columns from first few rows
         const numCols=Math.max(...rows.slice(0,20).map(r=>r.length));
-        let bestCol=-1,bestScore=-1;
-        for(let c=0;c<numCols;c++){
+
+        // Score each column for likelihood of being a name column
+        function scoreCol(c){
           let score=0,count=0;
           for(let r=0;r<rows.length;r++){
             const cell=String(rows[r][c]||'').trim();
-            if(!cell||cell===''||cell==='0')continue;
+            if(!cell||cell==='0')continue;
             count++;
-            // Likely a name: has a space, no digits, reasonable length
-            if(/^[A-Za-z\s\-\.\']+$/.test(cell)&&cell.includes(' ')&&cell.length>4&&cell.length<50)score+=2;
-            else if(/^[A-Za-z]+$/.test(cell)&&cell.length>3)score+=1;
+            if(/^[A-Za-z\s\-\.']+$/.test(cell)&&cell.includes(' ')&&cell.length>4)score+=3;
+            else if(/^[A-Za-z]+$/.test(cell)&&cell.length>2)score+=1;
           }
-          if(count>=3&&score>bestScore){bestScore=score;bestCol=c;}
+          return count>=2?score:-1;
         }
 
-        if(bestCol===-1){
-          status.textContent='No learner name column found. Make sure names are in a column (First Last format).';
+        // Find top 2 name-like columns
+        const colScores=[];
+        for(let c=0;c<numCols;c++){
+          const s=scoreCol(c);
+          if(s>0)colScores.push({c,s});
+        }
+        colScores.sort((a,b)=>b.s-a.s);
+
+        if(colScores.length===0){
+          status.textContent='No learner name column found.';
           status.style.color='var(--red)';return;
         }
 
-        // Extract names, skip header-like rows (all caps, short, or numeric)
+        // Check if top 2 columns are adjacent and both look like name parts
+        // (first name + surname in separate columns)
+        const col1=colScores[0]?.c;
+        const col2=colScores[1]?.c;
+        const twoColMode=colScores.length>=2&&
+          Math.abs(col1-col2)<=2&& // columns are close together
+          colScores[1].s>colScores[0].s*0.4; // second col has reasonable score
+
+        // Extract names
         const names=[];
         for(let r=0;r<rows.length;r++){
-          const cell=String(rows[r][bestCol]||'').trim();
-          if(!cell||cell==='0'||cell==='')continue;
-          // Skip obvious headers
-          if(cell===cell.toUpperCase()&&cell.length<20&&!/\s/.test(cell))continue;
-          if(/^\d+$/.test(cell))continue;
-          if(/^[A-Za-z\s\-\.\']+$/.test(cell)&&cell.length>3)names.push(cell);
+          let name='';
+          if(twoColMode){
+            const a=String(rows[r][Math.min(col1,col2)]||'').trim();
+            const b=String(rows[r][Math.max(col1,col2)]||'').trim();
+            if(a&&b)name=a+' '+b;
+            else name=a||b;
+          } else {
+            name=String(rows[r][col1]||'').trim();
+          }
+          // Skip headers, blanks, numbers
+          if(!name||/^\d+$/.test(name))continue;
+          if(name.length<2)continue;
+          // Skip obvious header rows
+          const upper=name.toUpperCase();
+          if(['NAME','LEARNER','STUDENT','SURNAME','FIRSTNAME','FIRST NAME','LAST NAME'].some(h=>upper.includes(h)))continue;
+          names.push(name);
         }
 
         if(names.length===0){
-          status.textContent='No valid names found. Check the file has learner names in one column.';
+          status.textContent='No names found. Check your file format.';
           status.style.color='var(--red)';return;
         }
 
-        // Ask user: replace or append
-        const action=students.filter(s=>s.name.trim()).length>0
-          ?confirm(`Found ${names.length} learner name(s).\n\nClick OK to REPLACE current list.\nClick Cancel to ADD to existing list.`)
-          :true;
-
-        if(action){
-          // Replace
-          students=names.map(n=>({name:n,marks:questions.map(()=>0)}));
-        } else {
-          // Append — avoid duplicates
-          const existing=new Set(students.map(s=>s.name.toLowerCase()));
-          const toAdd=names.filter(n=>!existing.has(n.toLowerCase()));
-          toAdd.forEach(n=>students.push({name:n,marks:questions.map(()=>0)}));
-        }
-
+        // Add to students
+        students=names.map(n=>({name:n,marks:questions.map(()=>0)}));
         renderTable();
-        status.textContent=`✓ ${names.length} learner${names.length!==1?'s':''} imported from "${file.name}"`;
-        status.style.color='#4a4880';
-        // Reset input so same file can be re-uploaded
-        input.value='';
+        status.textContent=`✓ Imported ${names.length} learners${twoColMode?' (combined 2 columns)':''}`;
+        status.style.color='var(--green-mid)';
+        window._spipRendered=false;window._fnRendered=false;
+
       }catch(err){
         status.textContent='Error reading file: '+err.message;
         status.style.color='var(--red)';
