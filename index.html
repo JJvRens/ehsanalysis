@@ -241,13 +241,13 @@ tr.absent td{opacity:0.4;}
   <div class="no-print" style="position:relative;z-index:1">
     <div class="setup-grid">
       <div class="field-group"><label>School name</label><input id="f-school" value="Evander High School" oninput="updateMeta()"/></div>
-      <div class="field-group"><label>Educator</label><input id="f-educator" value="Ms J J v Rensburg" oninput="updateMeta()"/></div>
-      <div class="field-group"><label>Subject</label><input id="f-subject" value="Computer Applications Technology" oninput="onSubjectInput(this.value)" autocomplete="off" list="subject-list"/>
+      <div class="field-group"><label>Educator</label><input id="f-educator" value="" oninput="updateMeta()"/></div>
+      <div class="field-group"><label>Subject</label><input id="f-subject" value="" oninput="onSubjectInput(this.value)" autocomplete="off" list="subject-list"/>
 <datalist id="subject-list">
   <option value="Accounting"/>
   <option value="Afrikaans First Additional Language"/>
   <option value="Business Studies"/>
-  <option value="Computer Applications Technology"/>
+  <option value=""/>
   <option value="Creative Arts"/>
   <option value="Consumer Studies"/>
   <option value="Digital Technology"/>
@@ -266,14 +266,14 @@ tr.absent td{opacity:0.4;}
   <option value="Tourism"/>
   <option value="Visual Arts"/>
 </datalist></div>
-      <div class="field-group"><label>Grade</label><input id="f-grade" value="10" oninput="updateMeta()"/></div>
-      <div class="field-group"><label>Task</label><input id="f-task" value="Term 1 Theory" oninput="updateMeta()"/></div>
-      <div class="field-group"><label>Date</label><input id="f-date" type="date" value="2026-02-23" oninput="updateMeta()"/></div>
+      <div class="field-group"><label>Grade</label><input id="f-grade" value="" oninput="updateMeta()"/></div>
+      <div class="field-group"><label>Task</label><input id="f-task" value="" oninput="updateMeta()"/></div>
+      <div class="field-group"><label>Date</label><input id="f-date" type="date" value="" oninput="updateMeta()"/></div>
       <div class="field-group"><label>Circuit</label><input id="f-circuit" value="Highveld Ridge East" oninput="updateMeta()"/></div>
       <div class="field-group"><label>Stream</label>
         <select id="f-stream" oninput="updateMeta()">
-          <option value="BCM">BCM (1)</option><option value="Sciences">Sciences (2)</option>
-          <option value="Languages" selected>Languages (3)</option><option value="Humanities">Humanities (4)</option>
+          <option value="BCM" selected>BCM (1)</option><option value="Sciences">Sciences (2)</option>
+          <option value="Languages">Languages (3)</option><option value="Humanities">Humanities (4)</option>
           <option value="Technical">Technical (5)</option>
         </select>
       </div>
@@ -357,38 +357,13 @@ tr.absent td{opacity:0.4;}
 <script>
 // ── STATE ──────────────────────────────────────────────────────────────────
 let questions=[
-  {label:"Q1",topic:"Multiple choice",max:5,optional:false},
-  {label:"Q2",topic:"Matching items",max:3,optional:false},
-  {label:"Q3",topic:"True/False items",max:2,optional:false},
-  {label:"Q4",topic:"System Technologies",max:10,optional:false},
-  {label:"Q5",topic:"Social Implications",max:10,optional:false},
-  {label:"Q6",topic:"Solution Development",max:5,optional:false},
-  {label:"Q7",topic:"Integrated Scenario",max:15,optional:false},
+  {label:"Q1",topic:"Example Topic 1",max:20,optional:false},
+  {label:"Q2",topic:"Example Topic 2",max:30,optional:false},
 ];
 let students=[
-  {name:"Gwebu Onalina",marks:[2,3,2,5,0,3,3]},
-  {name:"Leotlela Blessing",marks:[4,3,2,9,7,3,7]},
-  {name:"Maahlo Lethabo",marks:[0,0,0,0,0,0,0]},
-  {name:"Mahlangu Lifalethu",marks:[5,2,2,10,8,5,13]},
-  {name:"Manyathela Tshegofatso",marks:[0,0,0,0,0,0,0]},
-  {name:"Mashiloane Atlegang",marks:[2,2,0,9,4,2,6]},
-  {name:"Mathevula Engetelo",marks:[1,2,0,9,0,2,4]},
-  {name:"Molaoa Tshimollo",marks:[4,2,1,8,1,1,4]},
-  {name:"Molewa Mmathapelo",marks:[3,3,1,11,2,4,8]},
-  {name:"Motsai Masimbonge",marks:[2,2,0,3,4,1,3]},
-  {name:"Mphahlele Jonathan",marks:[3,3,2,9,1,1,6]},
-  {name:"Mphali Nkosana",marks:[0,0,0,0,0,0,0]},
-  {name:"Mtetwa Owethu",marks:[2,3,1,9,3,1,6]},
-  {name:"Mthimunye Siyamthanda",marks:[3,3,2,5,2,1,3]},
-  {name:"Mthombeni Kamohelo",marks:[5,2,0,10,2,1,5]},
-  {name:"Mthombeni Nosipho",marks:[2,2,1,6,1,3,3]},
-  {name:"Mtsweni Thandeka",marks:[2,3,0,11,4,4,2]},
-  {name:"Ngubeni Alwande",marks:[4,2,2,7,5,4,4]},
-  {name:"Nkosi Nkosi-Inathi",marks:[3,1,0,10,4,2,5]},
-  {name:"Nkosi Siyabonga",marks:[3,0,0,7,3,1,4]},
-  {name:"Sonjica Litha",marks:[3,1,0,9,4,0,6]},
-  {name:"Tshithvana Austin",marks:[2,2,2,8,5,3,5]},
-  {name:"Zondo Ayanda",marks:[2,3,2,9,2,4,5]},
+  {name:"",marks:[0,0]},
+  {name:"",marks:[0,0]},
+  {name:"",marks:[0,0]},
 ];
 let meta={};
 
