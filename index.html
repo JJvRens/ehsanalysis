@@ -1376,8 +1376,9 @@ async function loadMyAnalyses(){
   list.innerHTML=res.data.map(a=>`
     <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)">
       <div style="flex:1;font-size:12px">
-        <span style="font-weight:600">${a.task||'Untitled'}</span>
-        <span style="color:var(--ink3);margin-left:6px">${a.date||''}</span>
+        <div><span style="font-weight:600">${a.task||'Untitled'}</span>
+        <span style="color:var(--ink3);margin-left:6px">${a.date||''}</span></div>
+        <div style="font-size:11px;color:var(--ink3);margin-top:1px">${a.subject||''} ${a.grade?'Gr '+a.grade:''}</div>
       </div>
       <button onclick="loadAnalysis('${a.id}')" style="padding:3px 10px;font-size:11px;background:var(--green-pale);border:1px solid var(--green-light);color:#393768;border-radius:3px;cursor:pointer;font-family:var(--sans)">Load</button>
       <button onclick="deleteAnalysis('${a.id}')" style="padding:3px 8px;font-size:11px;background:none;border:1px solid #e8b4b4;color:var(--red);border-radius:3px;cursor:pointer;font-family:var(--sans)">✕</button>
