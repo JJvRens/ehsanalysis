@@ -1600,7 +1600,14 @@ async function togglePrinted(analysisId){
     body:JSON.stringify({fortnightly_printed_at:newVal})
   });
   if(!res.ok){
-    alert('Could not update printed status.\n\nThis usually means the database column is missing. Run this in Supabase SQL editor:\n\nALTER TABLE analyses ADD COLUMN fortnightly_printed_at timestamptz;\n\n(Error '+res.status+')');
+    alert('Could not update printed status. (Error '+res.status+')');
+    renderAdmin();
+    return;
+  }
+  // RLS may silently return 0 rows updated — detect that
+  if(Array.isArray(res.data)&&res.data.length===0){
+    alert('The update was blocked by a database permission rule.\n\nAdmins need permission to update other teachers'+String.fromCharCode(39)+' analyses. Run this in Supabase SQL editor:\n\nCREATE POLICY "Admins can update any analysis"\nON analyses FOR UPDATE\nUSING (EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.is_admin = true));');
+    renderAdmin();
     return;
   }
   a.fortnightly_printed_at=newVal;
