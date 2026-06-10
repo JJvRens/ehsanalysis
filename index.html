@@ -2268,10 +2268,12 @@ document.addEventListener('DOMContentLoaded',()=>{
   <!-- SAVE BAR -->
   <div style="background:var(--paper2);border-bottom:1px solid var(--border);padding:6px 1.5rem;display:flex;align-items:center;gap:10px;flex-wrap:wrap" class="no-print">
     <span style="font-size:12px;color:var(--ink3)">Logged in as <strong id="user-name-display"></strong></span>
-    <button id="save-btn" onclick="saveAnalysis()" style="padding:5px 14px;background:#393768;color:white;border:none;border-radius:3px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans)">💾 Save</button>
-    <span id="autosave-status" style="font-size:11px;color:var(--ink3);font-family:var(--mono);min-width:80px"></span>
-    <button onclick="toggleDrawer()" style="padding:5px 14px;background:white;color:#393768;border:1px solid var(--green-light);border-radius:3px;font-size:12px;cursor:pointer;font-family:var(--sans)">📂 My analyses</button>
-    <button onclick="newAnalysis()" style="padding:5px 14px;background:white;color:var(--ink2);border:1px solid var(--border);border-radius:3px;font-size:12px;cursor:pointer;font-family:var(--sans)">+ New</button>
+    <span id="teacher-tools" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <button id="save-btn" onclick="saveAnalysis()" style="padding:5px 14px;background:#393768;color:white;border:none;border-radius:3px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans)">💾 Save</button>
+      <span id="autosave-status" style="font-size:11px;color:var(--ink3);font-family:var(--mono);min-width:80px"></span>
+      <button onclick="toggleDrawer()" style="padding:5px 14px;background:white;color:#393768;border:1px solid var(--green-light);border-radius:3px;font-size:12px;cursor:pointer;font-family:var(--sans)">📂 My analyses</button>
+      <button onclick="newAnalysis()" style="padding:5px 14px;background:white;color:var(--ink2);border:1px solid var(--border);border-radius:3px;font-size:12px;cursor:pointer;font-family:var(--sans)">+ New</button>
+    </span>
     <button onclick="supaSignOut()" style="margin-left:auto;padding:5px 12px;background:none;color:var(--ink3);border:1px solid var(--border);border-radius:3px;font-size:11px;cursor:pointer;font-family:var(--sans)">Sign out</button>
   </div>
 
@@ -2376,9 +2378,15 @@ window.showPage=function(id){
     document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
     document.getElementById('page-admin').classList.add('active');
     document.getElementById('tab-admin').classList.add('active');
+    // Hide teacher-only tools (save / my analyses / new) on the admin view
+    const tt=document.getElementById('teacher-tools');
+    if(tt)tt.style.display='none';
     renderAdmin();
     return;
   }
+  // Show teacher tools again on any teacher page
+  const tt=document.getElementById('teacher-tools');
+  if(tt)tt.style.display='flex';
   _origShowPage(id);
   // Restore SPIP values after switching back to SPIP
   if(id==='spip'){
