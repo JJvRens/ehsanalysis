@@ -1496,6 +1496,11 @@ async function renderAdmin(){
   // Store analyses globally for detail view
   window._adminAnalyses=res.data;
 
+  // Progress stats
+  const total=res.data.length;
+  const printed=res.data.filter(a=>a.fortnightly_printed_at).length;
+  const filter=window._adminPrintFilter||'all';
+
   // Group by teacher_id
   const byTeacher={};
   res.data.forEach(a=>{
@@ -1504,13 +1509,37 @@ async function renderAdmin(){
     byTeacher[key].analyses.push(a);
   });
 
-  container.innerHTML=Object.entries(byTeacher).map(([tid,teacher])=>`
+  // Progress bar + filter controls
+  const controls=`
+    <div style="background:white;border:1px solid var(--border);border-radius:4px;padding:12px 16px;margin-bottom:1rem;display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="font-size:13px;font-weight:600;color:#393768">Fortnightly printing: ${printed} of ${total} done</span>
+        <div style="width:160px;height:8px;background:#eee;border-radius:4px;overflow:hidden">
+          <div style="height:100%;width:${total?Math.round(printed/total*100):0}%;background:#ccaa00;transition:width 0.3s"></div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button onclick="setAdminFilter('all')" style="padding:5px 12px;border:1px solid var(--border);border-radius:3px;font-size:11px;cursor:pointer;font-family:var(--sans);background:${filter==='all'?'#393768':'white'};color:${filter==='all'?'white':'#393768'}">All (${total})</button>
+        <button onclick="setAdminFilter('notprinted')" style="padding:5px 12px;border:1px solid var(--border);border-radius:3px;font-size:11px;cursor:pointer;font-family:var(--sans);background:${filter==='notprinted'?'#393768':'white'};color:${filter==='notprinted'?'white':'#393768'}">Not printed (${total-printed})</button>
+        <button onclick="setAdminFilter('printed')" style="padding:5px 12px;border:1px solid var(--border);border-radius:3px;font-size:11px;cursor:pointer;font-family:var(--sans);background:${filter==='printed'?'#393768':'white'};color:${filter==='printed'?'white':'#393768'}">Printed (${printed})</button>
+      </div>
+    </div>`;
+
+  const teacherCards=Object.entries(byTeacher).map(([tid,teacher])=>{
+    // Filter analyses per current filter
+    const visibleAnalyses=teacher.analyses.filter(a=>{
+      if(filter==='printed')return !!a.fortnightly_printed_at;
+      if(filter==='notprinted')return !a.fortnightly_printed_at;
+      return true;
+    });
+    if(visibleAnalyses.length===0)return '';
+    return `
     <div style="background:white;border:1px solid var(--border);border-radius:4px;margin-bottom:1rem;overflow:hidden">
       <div style="background:#393768;color:white;padding:10px 14px;font-size:13px;font-weight:600;display:flex;justify-content:space-between;align-items:center">
         <span>${teacher.name}</span>
-        <span style="font-size:11px;opacity:0.7;font-weight:400">${teacher.analyses.length} analysis${teacher.analyses.length!==1?'es':''}</span>
+        <span style="font-size:11px;opacity:0.7;font-weight:400">${visibleAnalyses.length} analysis${visibleAnalyses.length!==1?'es':''}</span>
       </div>
-      ${teacher.analyses.map(a=>{
+      ${visibleAnalyses.map(a=>{
         let qs=[],ss=[];
         try{qs=JSON.parse(a.questions);}catch{}
         try{ss=JSON.parse(a.students);}catch{}
@@ -1524,7 +1553,9 @@ async function renderAdmin(){
           const tot=s.marks.reduce((a,v)=>a+(Number(v)||0),0);
           return mx&&Math.round(tot/mx*100)>=50;
         }).length;
-        return`<div onclick="showAdminDetail('${a.id}')" style="padding:12px 14px;border-bottom:1px solid var(--border);font-size:12px;cursor:pointer;transition:background 0.1s" onmouseover="this.style.background='var(--green-pale)'" onmouseout="this.style.background='white'">
+        const isPrinted=!!a.fortnightly_printed_at;
+        const printedLabel=isPrinted?('Printed '+new Date(a.fortnightly_printed_at).toLocaleDateString()):'';
+        return`<div onclick="showAdminDetail('${a.id}')" style="padding:12px 14px;border-bottom:1px solid var(--border);font-size:12px;cursor:pointer;transition:background 0.1s;${isPrinted?'opacity:0.62;background:#fafaf5':''}" onmouseover="this.style.background='var(--green-pale)'" onmouseout="this.style.background='${isPrinted?'#fafaf5':'white'}'">
           <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between">
             <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
               <span style="font-weight:600;font-size:13px">${a.task||'Untitled'}</span>
@@ -1537,10 +1568,50 @@ async function renderAdmin(){
               <span style="color:var(--ink3);font-size:11px">View →</span>
             </div>
           </div>
-          <button onclick="event.stopPropagation();printAdminFortnightly(\'${a.id}\')" style="flex-shrink:0;margin-top:4px;padding:5px 12px;background:#393768;color:white;border:none;border-radius:3px;font-size:11px;cursor:pointer;font-family:var(--sans)">⎙ Fortnightly</button>
+          <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
+            <button onclick="event.stopPropagation();printAdminFortnightly(\'${a.id}\')" style="flex-shrink:0;padding:5px 12px;background:#393768;color:white;border:none;border-radius:3px;font-size:11px;cursor:pointer;font-family:var(--sans)">⎙ Fortnightly</button>
+            <button onclick="event.stopPropagation();togglePrinted(\'${a.id}\')" style="flex-shrink:0;padding:5px 12px;background:${isPrinted?'#2a7a2a':'white'};color:${isPrinted?'white':'#393768'};border:1px solid ${isPrinted?'#2a7a2a':'var(--border)'};border-radius:3px;font-size:11px;cursor:pointer;font-family:var(--sans)">${isPrinted?'✓ Printed':'Mark printed'}</button>
+            ${printedLabel?`<span style="font-size:10px;color:#2a7a2a;font-family:var(--mono)">${printedLabel}</span>`:''}
+          </div>
         </div>`;
       }).join('')}
-    </div>`).join('');
+    </div>`;
+  }).join('');
+
+  container.innerHTML=controls+teacherCards;
+}
+
+// Set the admin print filter and re-render
+function setAdminFilter(f){
+  window._adminPrintFilter=f;
+  renderAdmin();
+}
+
+// Toggle the printed status (manual override)
+async function togglePrinted(analysisId){
+  const a=window._adminAnalyses?.find(x=>x.id===analysisId);
+  if(!a)return;
+  const newVal=a.fortnightly_printed_at?null:new Date().toISOString();
+  // Optimistic update
+  a.fortnightly_printed_at=newVal;
+  await supaFetch('/rest/v1/analyses?id=eq.'+analysisId,{
+    method:'PATCH',
+    body:JSON.stringify({fortnightly_printed_at:newVal})
+  });
+  renderAdmin();
+}
+
+// Mark as printed (auto, called after print) — only sets, never unsets
+async function markPrinted(analysisId){
+  const a=window._adminAnalyses?.find(x=>x.id===analysisId);
+  if(!a||a.fortnightly_printed_at)return; // already printed, leave timestamp
+  const ts=new Date().toISOString();
+  a.fortnightly_printed_at=ts;
+  await supaFetch('/rest/v1/analyses?id=eq.'+analysisId,{
+    method:'PATCH',
+    body:JSON.stringify({fortnightly_printed_at:ts})
+  });
+  renderAdmin();
 }
 
 function printAdminFortnightly(analysisId){
@@ -1668,6 +1739,8 @@ function printAdminFortnightly(analysisId){
   win.document.write(html);
   win.document.close();
   setTimeout(()=>win.print(),600);
+  // Auto-mark as printed (hybrid: auto-set, admin can untick later)
+  markPrinted(analysisId);
 }
 
 function showAdminDetail(analysisId){
