@@ -1568,9 +1568,12 @@ async function renderAdmin(){
               <span style="color:var(--ink3);font-size:11px">View →</span>
             </div>
           </div>
-          <div style="display:flex;gap:8px;align-items:center;margin-top:6px">
+          <div style="display:flex;gap:12px;align-items:center;margin-top:6px">
             <button onclick="event.stopPropagation();printAdminFortnightly(\'${a.id}\')" style="flex-shrink:0;padding:5px 12px;background:#393768;color:white;border:none;border-radius:3px;font-size:11px;cursor:pointer;font-family:var(--sans)">⎙ Fortnightly</button>
-            <button onclick="event.stopPropagation();togglePrinted(\'${a.id}\')" style="flex-shrink:0;padding:5px 12px;background:${isPrinted?'#2a7a2a':'white'};color:${isPrinted?'white':'#393768'};border:1px solid ${isPrinted?'#2a7a2a':'var(--border)'};border-radius:3px;font-size:11px;cursor:pointer;font-family:var(--sans)">${isPrinted?'✓ Printed':'Mark printed'}</button>
+            <label onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;color:${isPrinted?'#2a7a2a':'#393768'};font-weight:600;font-family:var(--sans)">
+              <input type="checkbox" ${isPrinted?'checked':''} onchange="event.stopPropagation();togglePrinted('${a.id}')" style="width:16px;height:16px;cursor:pointer;accent-color:#2a7a2a"/>
+              ${isPrinted?'Printed':'Mark as printed'}
+            </label>
             ${printedLabel?`<span style="font-size:10px;color:#2a7a2a;font-family:var(--mono)">${printedLabel}</span>`:''}
           </div>
         </div>`;
@@ -1592,12 +1595,15 @@ async function togglePrinted(analysisId){
   const a=window._adminAnalyses?.find(x=>x.id===analysisId);
   if(!a)return;
   const newVal=a.fortnightly_printed_at?null:new Date().toISOString();
-  // Optimistic update
-  a.fortnightly_printed_at=newVal;
-  await supaFetch('/rest/v1/analyses?id=eq.'+analysisId,{
+  const res=await supaFetch('/rest/v1/analyses?id=eq.'+analysisId,{
     method:'PATCH',
     body:JSON.stringify({fortnightly_printed_at:newVal})
   });
+  if(!res.ok){
+    alert('Could not update printed status.\n\nThis usually means the database column is missing. Run this in Supabase SQL editor:\n\nALTER TABLE analyses ADD COLUMN fortnightly_printed_at timestamptz;\n\n(Error '+res.status+')');
+    return;
+  }
+  a.fortnightly_printed_at=newVal;
   renderAdmin();
 }
 
@@ -2336,6 +2342,7 @@ function saveSpipValues(){
     if(ta.id)saved[ta.id]=ta.value;
   });
   window._allSpipValues[key]=saved;
+  scheduleAutoSave();
 }
 
 // Restore SPIP typed values after render
