@@ -448,12 +448,25 @@ function renderTable(){
     return`<tr id="row-${si}" class="${ab?'absent':''}">
       <td style="color:var(--ink3);font-family:var(--mono);font-size:10px">${si+1}</td>
       <td class="nc"><input class="ni" value="${s.name}" oninput="students[${si}].name=this.value;window._spipRendered=false;window._fnRendered=false;"/></td>
-      ${questions.map((q,qi)=>`<td><input class="mi" type="number" min="0" max="${q.max}" value="${s.marks[qi]??0}" onchange="updateMark(${si},${qi},this.value)" onkeydown="navigateMark(event,${si},${qi})"/></td>`).join('')}
+      ${questions.map((q,qi)=>`<td><input class="mi" type="number" min="0" max="${q.max}" value="${s.marks[qi]??0}" onfocus="markCellFocus(this)" onblur="markCellBlur(${si},${qi},this)" onchange="updateMark(${si},${qi},this.value)" onkeydown="navigateMark(event,${si},${qi})"/></td>`).join('')}
       <td id="tot-${si}" class="tc" style="background:${ab?'':'#fffff0'}">${ab?'—':tot}</td>
       <td id="pct-${si}" class="pc" style="background:${ab?'':'#fffff0'};color:${ab?'inherit':'#393768'};font-weight:600">${ab?'—':pct+'%'}</td>
       <td id="lvl-${si}"><span class="lb ${lv.cls}">${ab?'ABS':lv.label}</span></td>
       <td style="text-align:center;padding:2px;border-bottom:1px solid var(--paper3)"><button onclick="deleteStudent(${si})" style="background:none;border:none;color:#c0392b;cursor:pointer;font-size:14px;font-weight:700;padding:2px 5px;border-radius:3px;line-height:1" title="Remove learner">✕</button></td></tr>\``;
   }).join('');
+}
+
+// ── Option B: clear visible 0 on focus, restore on blur if left empty ──
+function markCellFocus(input){
+  if(input.value==='0'||input.value===0){
+    input.value='';
+  }
+}
+function markCellBlur(si,qi,input){
+  if(input.value===''||input.value==null){
+    input.value=0;
+    updateMark(si,qi,0);
+  }
 }
 
 // Update only the affected row's summary cells — no full re-render so focus is never lost
@@ -2001,7 +2014,12 @@ function focusMarkCell(si,qi){
   const input=targetCell.querySelector('input.mi');
   if(input){
     input.focus();
-    input.select(); // select all so typing replaces the value immediately
+    // Option B: if cell shows 0, clear it so typing starts clean; otherwise select all
+    if(input.value==='0'||input.value===0){
+      input.value='';
+    } else {
+      input.select();
+    }
   }
 }
 
