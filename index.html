@@ -1205,7 +1205,16 @@ function importFromExcel(input){
       }catch(err){
         status.textContent='Error reading file: '+err.message;
         status.style.color='var(--red)';
+      }finally{
+        // Reset the input so the SAME file can be selected again on a retry.
+        // Without this, re-selecting an identical file does not fire onchange.
+        input.value='';
       }
+    };
+    reader.onerror=function(){
+      status.textContent='Could not read the file. Please try again.';
+      status.style.color='var(--red)';
+      input.value='';
     };
     reader.readAsArrayBuffer(file);
   });
