@@ -64,7 +64,8 @@ table.et td{padding:3px 5px;border:1px solid var(--paper3);text-align:center;bac
 table.et tr:nth-child(even) td{background:#fafcf8;}
 table.et tr:hover td{background:var(--green-pale);}
 table.et td.nc{text-align:left;padding-left:8px;}
-table.et td input.mi{width:48px;padding:3px 5px;border:1px solid var(--border);border-radius:2px;font-family:var(--mono);font-size:11px;text-align:center;background:white;color:var(--ink);outline:none;}
+table.et td input.mi{width:64px;padding:3px 5px;border:1px solid var(--border);border-radius:2px;font-family:var(--mono);font-size:11px;text-align:center;background:white;color:var(--ink);outline:none;-moz-appearance:textfield;appearance:textfield;}
+table.et td input.mi::-webkit-outer-spin-button,table.et td input.mi::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
 table.et td input.mi:focus{border-color:#4a4880;background:var(--green-pale);}
 table.et td input.ni{width:170px;padding:3px 7px;border:1px solid var(--border);border-radius:2px;font-family:var(--sans);font-size:12px;background:white;color:var(--ink);outline:none;}
 table.et td input.ni:focus{border-color:#4a4880;}
@@ -184,7 +185,7 @@ tr.absent td{opacity:0.65;}
 
   /* Mark table — allow horizontal scroll, smaller inputs */
   .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
-  table.et td input.mi{width:38px;font-size:10px;padding:2px 3px;}
+  table.et td input.mi{width:52px;font-size:10px;padding:2px 3px;}
   table.et td input.ni{width:130px;font-size:11px;}
   table.et th{font-size:9px;padding:5px 4px;}
   table.et td{padding:2px 3px;}
