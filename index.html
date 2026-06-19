@@ -290,9 +290,16 @@ tr.absent td{opacity:0.4;}
       <span style="font-size:11px;color:var(--ink3)">Import learner names from Excel:</span>
       <label style="padding:5px 14px;background:#393768;color:white;border-radius:3px;font-size:11px;font-weight:600;cursor:pointer;letter-spacing:0.05em;font-family:var(--sans)">
         📂 Upload .xlsx / .xls
-        <input type="file" id="excel-upload" accept=".xlsx,.xls,.csv" style="display:none" onchange="importFromExcel(this)"/>
+        <input type="file" id="excel-upload" accept=".xlsx,.xls,.csv" style="display:none" onchange="importFromExcel(this,'first')"/>
       </label>
-      <span style="font-size:11px;color:var(--ink3)">— the app will look for a column containing learner names and import them automatically.</span>
+      <label style="padding:5px 14px;background:white;color:#393768;border:1px solid var(--green-light);border-radius:3px;font-size:11px;font-weight:600;cursor:pointer;letter-spacing:0.05em;font-family:var(--sans)">
+        🔄 Wrong list? Load another
+        <input type="file" id="excel-replace" accept=".xlsx,.xls,.csv" style="display:none" onchange="importFromExcel(this,'replace')"/>
+      </label>
+      <label style="padding:5px 14px;background:white;color:#393768;border:1px solid var(--green-light);border-radius:3px;font-size:11px;font-weight:600;cursor:pointer;letter-spacing:0.05em;font-family:var(--sans)">
+        ➕ Add more names
+        <input type="file" id="excel-add" accept=".xlsx,.xls,.csv" style="display:none" onchange="importFromExcel(this,'add')"/>
+      </label>
       <span id="import-status" style="font-size:11px;font-weight:600;color:#4a4880"></span>
     </div>
   </div>
@@ -475,6 +482,11 @@ function updateMark(si,qi,val){
   window._fnRendered=false;
   let v=Number(val)||0;
   if(v>questions[qi].max)v=questions[qi].max;
+  // #2: once a real mark (>0) is entered, switch auto-save on so a brand-new
+  // analysis starts being protected even before the first manual save.
+  if(v>0&&!_autoSaveEnabled){
+    _autoSaveEnabled=true;
+  }
   // Clamp input visually too
   const inputs=document.querySelectorAll(`#row-${si} input.mi`);
   if(inputs[qi])inputs[qi].value=v;
@@ -1112,10 +1124,26 @@ function loadSheetJS(cb){
   document.head.appendChild(s);
 }
 
-function importFromExcel(input){
+function importFromExcel(input,mode){
+  mode=mode||'first';
   const file=input.files[0];
   if(!file)return;
   const status=document.getElementById('import-status');
+
+  // Does the grid already have real data (a learner with a name or any mark)?
+  function gridHasData(){
+    return students.some(s=>(s.name&&s.name.trim())||s.marks.some(m=>(Number(m)||0)>0));
+  }
+
+  // "Wrong list? Load another" — warn before wiping existing marks
+  if(mode==='replace'&&gridHasData()){
+    const hasMarks=students.some(s=>s.marks.some(m=>(Number(m)||0)>0));
+    const msg=hasMarks
+      ? 'This will replace your current learners AND their marks with the new list. Are you sure?'
+      : 'This will replace your current learner list with the new one. Are you sure?';
+    if(!confirm(msg)){input.value='';return;}
+  }
+
   status.textContent='Reading file...';
   status.style.color='var(--ink3)';
 
@@ -1162,12 +1190,11 @@ function importFromExcel(input){
         }
 
         // Check if top 2 columns are adjacent and both look like name parts
-        // (first name + surname in separate columns)
         const col1=colScores[0]?.c;
         const col2=colScores[1]?.c;
         const twoColMode=colScores.length>=2&&
-          Math.abs(col1-col2)<=2&& // columns are close together
-          colScores[1].s>colScores[0].s*0.4; // second col has reasonable score
+          Math.abs(col1-col2)<=2&&
+          colScores[1].s>colScores[0].s*0.4;
 
         // Extract names
         const names=[];
@@ -1181,10 +1208,8 @@ function importFromExcel(input){
           } else {
             name=String(rows[r][col1]||'').trim();
           }
-          // Skip headers, blanks, numbers
           if(!name||/^\d+$/.test(name))continue;
           if(name.length<2)continue;
-          // Skip obvious header rows
           const upper=name.toUpperCase();
           if(['NAME','LEARNER','STUDENT','SURNAME','FIRSTNAME','FIRST NAME','LAST NAME'].some(h=>upper.includes(h)))continue;
           names.push(name);
@@ -1195,19 +1220,59 @@ function importFromExcel(input){
           status.style.color='var(--red)';return;
         }
 
-        // Add to students
-        students=names.map(n=>({name:n,marks:questions.map(()=>0)}));
-        renderTable();
-        status.textContent=`✓ Imported ${names.length} learners${twoColMode?' (combined 2 columns)':''}`;
-        status.style.color='var(--green-mid)';
-        window._spipRendered=false;window._fnRendered=false;
+        if(mode==='add'){
+          // ── ADD MORE NAMES ── keep existing learners, append new names ──
+          // Existing names for duplicate check (case-insensitive, trimmed)
+          const existing=students.map(s=>(s.name||'').trim().toLowerCase()).filter(Boolean);
+          const dupes=names.filter(n=>existing.includes(n.trim().toLowerCase()));
+
+          let namesToAdd=names;
+          if(dupes.length>0){
+            const uniqueDupes=[...new Set(dupes)];
+            const ok=confirm(
+              'These names are already in your list:\n\n'+
+              uniqueDupes.join('\n')+
+              '\n\nThey are duplicates. Do you still want to add them?\n\n'+
+              'OK = add everything (including duplicates)\n'+
+              'Cancel = add only the new names, skip duplicates'
+            );
+            if(!ok){
+              const dupeSet=new Set(uniqueDupes.map(d=>d.trim().toLowerCase()));
+              namesToAdd=names.filter(n=>!dupeSet.has(n.trim().toLowerCase()));
+            }
+          }
+
+          if(namesToAdd.length===0){
+            status.textContent='No new names to add (all were duplicates).';
+            status.style.color='var(--ink3)';return;
+          }
+
+          // If the grid is just one blank starter row, drop it before adding
+          if(students.length===1&&!students[0].name.trim()&&students[0].marks.every(m=>(Number(m)||0)===0)){
+            students=[];
+          }
+          namesToAdd.forEach(n=>students.push({name:n,marks:questions.map(()=>0)}));
+          renderTable();
+          status.textContent=`✓ Added ${namesToAdd.length} learner${namesToAdd.length!==1?'s':''}${dupes.length&&namesToAdd.length<names.length?' (skipped '+dupes.length+' duplicate'+(dupes.length!==1?'s':'')+')':''}`;
+          status.style.color='var(--green-mid)';
+          window._spipRendered=false;window._fnRendered=false;
+          if(_autoSaveEnabled)scheduleAutoSave();
+
+        } else {
+          // ── FIRST / REPLACE ── replace the whole list ──
+          students=names.map(n=>({name:n,marks:questions.map(()=>0)}));
+          renderTable();
+          status.textContent=`✓ Imported ${names.length} learners${twoColMode?' (combined 2 columns)':''}`;
+          status.style.color='var(--green-mid)';
+          window._spipRendered=false;window._fnRendered=false;
+          if(_autoSaveEnabled)scheduleAutoSave();
+        }
 
       }catch(err){
         status.textContent='Error reading file: '+err.message;
         status.style.color='var(--red)';
       }finally{
         // Reset the input so the SAME file can be selected again on a retry.
-        // Without this, re-selecting an identical file does not fire onchange.
         input.value='';
       }
     };
