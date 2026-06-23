@@ -2099,6 +2099,31 @@ function focusMarkCell(si,qi){
 }
 
 // ── PRINT ALL REPORTS ────────────────────────────────────────────────────────
+// Textareas store typed text in their live .value property, NOT in innerHTML.
+// So before copying a section's HTML into the print window, we clone it and
+// write each textarea's current value into the markup (and swap inputs for
+// their values too), otherwise the printout comes back blank.
+function captureRendered(el){
+  if(!el)return '';
+  const clone=el.cloneNode(true);
+  // Match live textareas to their clones by index and bake the value in
+  const liveTextareas=el.querySelectorAll('textarea');
+  const cloneTextareas=clone.querySelectorAll('textarea');
+  cloneTextareas.forEach((ta,i)=>{
+    const val=liveTextareas[i]?liveTextareas[i].value:'';
+    ta.textContent=val;          // becomes the visible content when printed
+    ta.setAttribute('rows', Math.max(2,(val.split('\n').length)) );
+  });
+  // Do the same for any text inputs
+  const liveInputs=el.querySelectorAll('input');
+  const cloneInputs=clone.querySelectorAll('input');
+  cloneInputs.forEach((inp,i)=>{
+    const val=liveInputs[i]?liveInputs[i].value:'';
+    inp.setAttribute('value',val);
+  });
+  return clone.innerHTML;
+}
+
 function printAllReports(){
   // Make sure all pages are rendered first
   renderSummary();
@@ -2106,10 +2131,10 @@ function printAllReports(){
   if(!window._fnRendered){renderFortnightly();window._fnRendered=true;}
 
   setTimeout(()=>{
-    // Grab rendered HTML from each page
-    const summary=document.getElementById('summary-content')?.innerHTML||'';
-    const spip=document.getElementById('spip-render')?.innerHTML||'';
-    const fn=document.getElementById('fortnightly-render')?.innerHTML||'';
+    // Grab rendered HTML from each page, baking in live textarea/input values
+    const summary=captureRendered(document.getElementById('summary-content'));
+    const spip=captureRendered(document.getElementById('spip-render'));
+    const fn=captureRendered(document.getElementById('fortnightly-render'));
 
     const win=window.open('','_blank');
     const html='<!DOCTYPE html><html><head>'
