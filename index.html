@@ -1847,8 +1847,8 @@ function printAdminFortnightly(analysisId){
   win.document.write(html);
   win.document.close();
   setTimeout(()=>win.print(),600);
-  // Note: printing no longer auto-ticks the checkbox — the admin marks it
-  // manually once she has confirmed the report printed correctly.
+  // Auto-mark as printed (hybrid: auto-set, admin can untick later)
+  markPrinted(analysisId);
 }
 
 function showAdminDetail(analysisId){
