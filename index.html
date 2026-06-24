@@ -1307,22 +1307,64 @@ let currentUser=null;
 let currentProfile=null;
 let currentAnalysisId=null;
 let accessToken=null;
+let refreshToken=null;
 
-async function supaFetch(path,opts={}){
-  const token=accessToken||SUPA_ANON;
-  const res=await fetch(SUPA_URL+path,{
-    ...opts,
-    headers:{
-      'apikey':SUPA_ANON,
-      'Authorization':'Bearer '+token,
-      'Content-Type':'application/json',
-      'Prefer':'return=representation',
-      ...(opts.headers||{})
+// Use the refresh token to silently get a new access token when the old one
+// expires. Returns true on success. Prevents teachers being kicked out mid-save.
+async function tryRefreshToken(){
+  if(!refreshToken)return false;
+  try{
+    const res=await fetch(SUPA_URL+'/auth/v1/token?grant_type=refresh_token',{
+      method:'POST',
+      headers:{'apikey':SUPA_ANON,'Content-Type':'application/json'},
+      body:JSON.stringify({refresh_token:refreshToken})
+    });
+    if(!res.ok)return false;
+    const data=await res.json();
+    if(data.access_token){
+      accessToken=data.access_token;
+      if(data.refresh_token)refreshToken=data.refresh_token;
+      return true;
     }
-  });
-  const text=await res.text();
-  try{return{ok:res.ok,status:res.status,data:text?JSON.parse(text):null};}
-  catch{return{ok:res.ok,status:res.status,data:text};}
+  }catch(e){/* network issue — handled by caller */}
+  return false;
+}
+
+async function supaFetch(path,opts={},_isRetryAfterRefresh){
+  const token=accessToken||SUPA_ANON;
+  const maxTries=3;
+  let lastErr=null;
+  for(let attempt=1;attempt<=maxTries;attempt++){
+    try{
+      const res=await fetch(SUPA_URL+path,{
+        ...opts,
+        headers:{
+          'apikey':SUPA_ANON,
+          'Authorization':'Bearer '+token,
+          'Content-Type':'application/json',
+          'Prefer':'return=representation',
+          ...(opts.headers||{})
+        }
+      });
+      // Token expired → refresh once and retry the whole request
+      if(res.status===401&&!_isRetryAfterRefresh&&accessToken){
+        const refreshed=await tryRefreshToken();
+        if(refreshed){
+          return await supaFetch(path,opts,true);
+        }
+      }
+      const text=await res.text();
+      try{return{ok:res.ok,status:res.status,data:text?JSON.parse(text):null};}
+      catch{return{ok:res.ok,status:res.status,data:text};}
+    }catch(err){
+      lastErr=err;
+      if(attempt<maxTries){
+        await new Promise(r=>setTimeout(r,600*attempt));
+        continue;
+      }
+    }
+  }
+  return{ok:false,status:0,data:null,networkError:true,error:lastErr};
 }
 
 async function supaAuth(email,password,isSignup=false){
@@ -1379,6 +1421,7 @@ async function handleLogin(){
   }
   currentUser={id:data.user?.id||data.id,email:data.user?.email};
   accessToken=data.access_token||data.token||null;
+  refreshToken=data.refresh_token||null;
   // Load or create profile
   const prof=await supaFetch(`/rest/v1/profiles?id=eq.${currentUser.id}&select=*`);
   if(prof.ok&&prof.data&&prof.data.length>0){
@@ -1446,6 +1489,16 @@ async function saveAnalysis(silent=false){
       })
     });
     if(!profRes.ok){
+      if(profRes.networkError){
+        if(!silent){btn.textContent='Could not save — check your internet connection';btn.disabled=false;setTimeout(()=>{btn.textContent='💾 Save';},5000);}
+        else{setAutoSaveStatus('Could not save — check your internet connection','#8b2020');}
+        return;
+      }
+      if(profRes.status===401){
+        if(!silent){btn.textContent='Session expired — please log out and back in';btn.disabled=false;setTimeout(()=>{btn.textContent='💾 Save';},6000);}
+        else{setAutoSaveStatus('Session expired — please log in again','#8b2020');}
+        return;
+      }
       console.error('Profile upsert failed:',profRes.status,JSON.stringify(profRes.data));
       if(!silent){btn.textContent='Save failed (profile)';btn.disabled=false;}
       else{setAutoSaveStatus('Save failed','#8b2020');}
@@ -1478,6 +1531,16 @@ async function saveAnalysis(silent=false){
       if(res.ok&&res.data&&res.data[0])currentAnalysisId=res.data[0].id;
     }
     if(!res.ok){
+      if(res.networkError){
+        if(!silent){btn.textContent='Could not save — check your internet connection';btn.disabled=false;setTimeout(()=>{btn.textContent='💾 Save';},5000);}
+        else{setAutoSaveStatus('Could not save — check your internet connection','#8b2020');}
+        return;
+      }
+      if(res.status===401){
+        if(!silent){btn.textContent='Session expired — please log out and back in';btn.disabled=false;setTimeout(()=>{btn.textContent='💾 Save';},6000);}
+        else{setAutoSaveStatus('Session expired — please log in again','#8b2020');}
+        return;
+      }
       console.error('Analysis save failed:',res.status,JSON.stringify(res.data));
       if(!silent){btn.textContent='Save failed ('+res.status+')';btn.disabled=false;}
       else{setAutoSaveStatus('Save failed ('+res.status+')','#8b2020');}
