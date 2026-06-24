@@ -1171,8 +1171,12 @@ function importFromExcel(input,mode){
             const cell=String(rows[r][c]||'').trim();
             if(!cell||cell==='0')continue;
             count++;
-            if(/^[A-Za-z\s\-\.']+$/.test(cell)&&cell.includes(' ')&&cell.length>4)score+=3;
-            else if(/^[A-Za-z]+$/.test(cell)&&cell.length>2)score+=1;
+            // Allow letters, spaces, hyphens, dots, apostrophes AND commas
+            // (SA class lists are often "SURNAME, Firstname"). Also allow
+            // accented letters via a broad unicode-letter check.
+            const looksLikeName=/^[\p{L}\s\-\.',]+$/u.test(cell);
+            if(looksLikeName&&(cell.includes(' ')||cell.includes(','))&&cell.length>4)score+=3;
+            else if(looksLikeName&&cell.length>2)score+=1;
           }
           return count>=2?score:-1;
         }
@@ -1209,10 +1213,13 @@ function importFromExcel(input,mode){
           } else {
             name=String(rows[r][col1]||'').trim();
           }
+          // Normalise "SURNAME, Firstname" → "SURNAME Firstname" (tidy spacing,
+          // keep surname-first order to match school registers)
+          name=name.replace(/\s*,\s*/g,' ').replace(/\s+/g,' ').trim();
           if(!name||/^\d+$/.test(name))continue;
           if(name.length<2)continue;
           const upper=name.toUpperCase();
-          if(['NAME','LEARNER','STUDENT','SURNAME','FIRSTNAME','FIRST NAME','LAST NAME'].some(h=>upper.includes(h)))continue;
+          if(['NAME','LEARNER','STUDENT','SURNAME','FIRSTNAME','FIRST NAME','LAST NAME'].some(h=>upper===h))continue;
           names.push(name);
         }
 
@@ -1840,8 +1847,8 @@ function printAdminFortnightly(analysisId){
   win.document.write(html);
   win.document.close();
   setTimeout(()=>win.print(),600);
-  // Auto-mark as printed (hybrid: auto-set, admin can untick later)
-  markPrinted(analysisId);
+  // Note: printing no longer auto-ticks the checkbox — the admin marks it
+  // manually once she has confirmed the report printed correctly.
 }
 
 function showAdminDetail(analysisId){
