@@ -1691,13 +1691,11 @@ async function duplicateAnalysis(id){
   let srcStudents=[];
   try{srcStudents=JSON.parse(a.students)||[];}catch{srcStudents=[];}
 
-  // Reset to the default question set — the teacher configures the new test
+  // Reset to the generic starter questions — the teacher builds the new test
   currentAnalysisId=null;
   questions=[
-    {label:"Q1",topic:"Multiple choice",max:5},{label:"Q2",topic:"Matching items",max:3},
-    {label:"Q3",topic:"True/False items",max:2},{label:"Q4",topic:"System Technologies",max:10},
-    {label:"Q5",topic:"Social Implications",max:10},{label:"Q6",topic:"Solution Development",max:5},
-    {label:"Q7",topic:"Integrated Scenario",max:15},
+    {label:"Q1",topic:"Example Topic 1",max:20,optional:false},
+    {label:"Q2",topic:"Example Topic 2",max:30,optional:false},
   ];
 
   // Carry the learners over with blank marks sized to the new question set
