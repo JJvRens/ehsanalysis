@@ -1443,15 +1443,49 @@ async function handleLogin(){
 // ── AUTO-SAVE ────────────────────────────────────────────────────────────────
 let _autoSaveTimer=null;
 let _autoSaveEnabled=false; // only enable after first manual save or load
+let _lastSavedAt=null;      // Date of the last successful save
+let _hasUnsavedChanges=false;
+let _statusTicker=null;     // keeps the "saved X ago" text fresh
 
 function setAutoSaveStatus(msg,color){
   const el=document.getElementById('autosave-status');
   if(el){el.textContent=msg;el.style.color=color||'var(--ink3)';}
 }
 
+// Human-friendly "how long ago" text
+function timeAgo(date){
+  if(!date)return '';
+  const secs=Math.floor((Date.now()-date.getTime())/1000);
+  if(secs<5)   return 'just now';
+  if(secs<60)  return secs+' seconds ago';
+  const mins=Math.floor(secs/60);
+  if(mins===1) return '1 minute ago';
+  if(mins<60)  return mins+' minutes ago';
+  const hrs=Math.floor(mins/60);
+  if(hrs===1)  return '1 hour ago';
+  if(hrs<24)   return hrs+' hours ago';
+  return date.toLocaleString();
+}
+
+// Show the persistent "Saved X ago" line, refreshing every 15s
+function showLastSaved(){
+  if(!_lastSavedAt)return;
+  _hasUnsavedChanges=false;
+  setAutoSaveStatus('✓ Saved '+timeAgo(_lastSavedAt),'#2a7a2a');
+  clearInterval(_statusTicker);
+  _statusTicker=setInterval(()=>{
+    // Only keep updating while there's nothing newer to report
+    if(!_hasUnsavedChanges&&_lastSavedAt){
+      setAutoSaveStatus('✓ Saved '+timeAgo(_lastSavedAt),'#2a7a2a');
+    }
+  },15000);
+}
+
 function scheduleAutoSave(){
   if(!_autoSaveEnabled)return;
   if(!currentUser)return;
+  _hasUnsavedChanges=true;
+  clearInterval(_statusTicker);
   setAutoSaveStatus('Unsaved changes…','#b08000');
   clearTimeout(_autoSaveTimer);
   _autoSaveTimer=setTimeout(async()=>{
@@ -1459,6 +1493,15 @@ function scheduleAutoSave(){
     await saveAnalysis(true);
   },1500);
 }
+
+// Warn the teacher if they try to close the tab with unsaved work
+window.addEventListener('beforeunload',(e)=>{
+  if(_hasUnsavedChanges&&currentUser){
+    e.preventDefault();
+    e.returnValue=''; // required by some browsers to show the prompt
+    return '';
+  }
+});
 
 function attachAutoSaveListeners(){
   ['f-task','f-date','f-subject','f-grade','f-circuit','f-stream','f-target','f-educator','f-school'].forEach(id=>{
@@ -1546,13 +1589,14 @@ async function saveAnalysis(silent=false){
       else{setAutoSaveStatus('Save failed ('+res.status+')','#8b2020');}
       return;
     }
+    // Save succeeded — record when, clear the unsaved flag, show "Saved X ago"
+    _lastSavedAt=new Date();
+    _hasUnsavedChanges=false;
     if(!silent){
       btn.textContent='✓ Saved';
       setTimeout(()=>{btn.textContent='💾 Save';btn.disabled=false;},2000);
-    } else {
-      setAutoSaveStatus('✓ Auto-saved','#2a7a2a');
-      setTimeout(()=>setAutoSaveStatus(''),3000);
     }
+    showLastSaved();
     _autoSaveEnabled=true;
     loadMyAnalyses();
   }catch(e){
@@ -1614,7 +1658,10 @@ async function loadAnalysis(id){
   showPage('entry');
   document.getElementById('save-btn').textContent='💾 Save';
   _autoSaveEnabled=true;
-  setAutoSaveStatus('');
+  // Freshly loaded from the database — nothing unsaved yet
+  _hasUnsavedChanges=false;
+  _lastSavedAt=a.updated_at?new Date(a.updated_at):new Date();
+  showLastSaved();
   // Close drawer
   toggleDrawer(false);
 }
@@ -1640,6 +1687,12 @@ function newAnalysis(){
   document.getElementById('f-date').value='';
   updateMeta();renderQConfig();
   showPage('entry');
+  // Fresh blank analysis — nothing saved, nothing unsaved yet
+  _hasUnsavedChanges=false;
+  _lastSavedAt=null;
+  _autoSaveEnabled=false;
+  clearInterval(_statusTicker);
+  setAutoSaveStatus('');
   toggleDrawer(false);
 }
 
@@ -2458,7 +2511,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     <span style="font-size:12px;color:var(--ink3)">Logged in as <strong id="user-name-display"></strong></span>
     <span id="teacher-tools" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
       <button id="save-btn" onclick="saveAnalysis()" style="padding:5px 14px;background:#393768;color:white;border:none;border-radius:3px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans)">💾 Save</button>
-      <span id="autosave-status" style="font-size:11px;color:var(--ink3);font-family:var(--mono);min-width:80px"></span>
+      <span id="autosave-status" style="font-size:11px;color:var(--ink3);font-family:var(--mono);min-width:150px;white-space:nowrap"></span>
       <button onclick="toggleDrawer()" style="padding:5px 14px;background:white;color:#393768;border:1px solid var(--green-light);border-radius:3px;font-size:12px;cursor:pointer;font-family:var(--sans)">📂 My analyses</button>
       <button onclick="newAnalysis()" style="padding:5px 14px;background:white;color:var(--ink2);border:1px solid var(--border);border-radius:3px;font-size:12px;cursor:pointer;font-family:var(--sans)">+ New</button>
     </span>
