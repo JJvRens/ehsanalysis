@@ -2473,23 +2473,33 @@ function printAllReports(){
     const spip=captureRendered(document.getElementById('spip-render'));
     const fn=captureRendered(document.getElementById('fortnightly-render'));
 
+    // Copy the app's OWN stylesheet across, so each report looks exactly like it
+    // does when printed on its own. Previously this window used a hand-written
+    // mini-stylesheet that guessed at the styles — which is what added the
+    // stray borders and mismatched spacing.
+    let appCss='';
+    for(const sheet of document.styleSheets){
+      try{
+        for(const rule of sheet.cssRules){appCss+=rule.cssText+'\n';}
+      }catch(e){/* cross-origin sheet — skip */}
+    }
+
     const win=window.open('','_blank');
     const html='<!DOCTYPE html><html><head>'
       +'<meta charset="UTF-8"/>'
       +'<title>All Reports</title>'
+      +'<style>'+appCss+'</style>'
       +'<style>'
-      +'*{box-sizing:border-box;margin:0;padding:0;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}'
-      +'body{font-family:Arial,sans-serif;background:white;padding:16px;font-size:12px;}'
+      // Only the extras needed for stacking three reports into one document.
+      // Deliberately no table/border rules here — the app's own CSS handles that.
+      +'*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}'
+      +'body{background:white;padding:16px;margin:0;}'
       +'.report-section{page-break-after:always;padding-bottom:20px;}'
       +'.report-section:last-child{page-break-after:auto;}'
-      +'.report-title{font-size:13px;font-weight:700;color:#393768;text-transform:uppercase;letter-spacing:0.06em;border-bottom:2px solid #393768;padding-bottom:4px;margin-bottom:16px;}'
-      +'table{border-collapse:collapse;width:100%;font-size:11px;}'
-      +'th,td{border:1px solid #999;padding:4px 6px;}'
-      +'textarea{width:100%;border:none;font-size:11px;font-family:Arial,sans-serif;resize:none;}'
-      +'.lb{display:inline-block;padding:1px 6px;border-radius:2px;font-size:10px;font-weight:600;}'
-      +'.l1{background:#fde8e8;color:#7a1a1a;}.l2{background:#fdf0dc;color:#6b3d00;}.l3{background:#fff8dc;color:#5a4200;}'
-      +'.l4{background:#deeeff;color:#0d3d7a;}.l5{background:#deeeff;color:#0d3d7a;}.l6{background:#e4f0e4;color:#1a4d2a;}'
-      +'.l7{background:#d0e8d8;color:#0f3d20;}.l8{background:#b8dccc;color:#0a2d18;}'
+      +'.report-title{font-size:13px;font-weight:700;color:#393768;text-transform:uppercase;'
+      +'letter-spacing:0.06em;border-bottom:2px solid #393768;padding-bottom:4px;margin-bottom:16px;}'
+      // Hide any on-screen-only controls that came across with the copied HTML
+      +'.no-print,.ai-suggest-btn,button{display:none!important;}'
       +'@media print{@page{margin:1cm;}}'
       +'</style>'
       +'</head><body>'
@@ -2858,3 +2868,4 @@ window.showPage=function(id){
 </script>
 </body>
 </html>
+
