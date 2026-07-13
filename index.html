@@ -279,6 +279,7 @@ tr.absent td{opacity:0.65;}
         </select>
       </div>
       <div class="field-group"><label>SPIP % Target</label><input id="f-target" value="50" type="number" min="0" max="100" oninput="updateMeta()"/></div>
+      <div class="field-group"><label>SA-SAMS Total</label><input id="f-sasams" type="number" min="1" placeholder="e.g. 80" title="The total the mark must be converted to for SA-SAMS. Leave blank if it matches the test total." oninput="updateMeta();renderTable();"/></div>
     </div>
     <div class="q-config">
       <div class="q-config-title">Questions / Topics configuration</div>
@@ -302,6 +303,7 @@ tr.absent td{opacity:0.65;}
         <input type="file" id="excel-add" accept=".xlsx,.xls,.csv" style="display:none" onchange="importFromExcel(this,'add')"/>
       </label>
       <span id="import-status" style="font-size:11px;font-weight:600;color:#4a4880"></span>
+      <button onclick="printSasamsList()" title="Print an alphabetical list of learners with their SA-SAMS marks" style="margin-left:auto;padding:5px 14px;background:#ccaa00;color:#1a1930;border:none;border-radius:3px;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:0.05em;font-family:var(--sans)">⎙ SA-SAMS List</button>
     </div>
   </div>
 
@@ -386,6 +388,7 @@ function getMeta(){
     circuit:document.getElementById('f-circuit')?.value||'',
     stream:document.getElementById('f-stream')?.value||'',
     target:document.getElementById('f-target')?.value||'50',
+    sasams:document.getElementById('f-sasams')?.value||'',
   };
 }
 function updateMeta(){meta=getMeta();}
@@ -412,6 +415,26 @@ function getLevel(p){
   return{l:8,cls:'l8',label:'L8'};
 }
 function isAbsent(m){return m.every(v=>(Number(v)||0)===0);}
+
+// ── SA-SAMS mark conversion ─────────────────────────────────────────────────
+// Converts a learner's total to the total required by SA-SAMS.
+// e.g. test out of 120, SA-SAMS wants /80 → (mark / 120) * 80
+// Rounds half up: 31.33 → 31, 31.5 → 32
+// Absent learners return 'A'.
+function getSasamsTotal(){
+  const v=Number(document.getElementById('f-sasams')?.value);
+  return (v&&v>0)?v:null;
+}
+function getSasamsMark(marks){
+  if(isAbsent(marks))return 'A';
+  const sasamsMax=getSasamsTotal();
+  const learnerMax=getStudentMax(marks)||getMax();
+  const tot=getTotal(marks);
+  // No SA-SAMS total set, or it matches the paper — no conversion needed
+  if(!sasamsMax||!learnerMax||sasamsMax===learnerMax)return tot;
+  // Math.round in JS rounds half UP (31.5 → 32), which is what we want
+  return Math.round((tot/learnerMax)*sasamsMax);
+}
 
 // ── Q CONFIG ───────────────────────────────────────────────────────────────
 function renderQConfig(){
@@ -448,6 +471,7 @@ function renderTable(){
     ${questions.map((q,i)=>`<th title="${q.topic}${q.optional?' (Optional)':''}" style="font-size:12px;font-weight:700;${q.optional?'background:#f5f0ff;color:#393768':''}">${q.label}<br><span style="font-size:9px;font-weight:400;opacity:0.8">(${q.max}${q.optional?' OPT':''})</span></th>`).join('')}
     <th style="font-size:12px;font-weight:700">Total</th>
     <th style="font-size:12px;font-weight:700">%</th>
+    <th style="font-size:12px;font-weight:700;background:#f5f0ff;color:#393768" title="Mark converted to the SA-SAMS total">SASAMS${getSasamsTotal()?'<br><span style="font-size:9px;font-weight:400;opacity:0.8">(/'+getSasamsTotal()+')</span>':''}</th>
     <th style="font-size:12px;font-weight:700">Lvl</th>
     <th style="width:28px;font-size:12px;font-weight:700"></th></tr>`;
   document.getElementById('mark-tbody').innerHTML=students.map((s,si)=>{
@@ -459,6 +483,7 @@ function renderTable(){
       ${questions.map((q,qi)=>`<td><input class="mi" type="number" min="0" max="${q.max}" value="${s.marks[qi]??0}" onfocus="markCellFocus(this)" onblur="markCellBlur(${si},${qi},this)" onchange="updateMark(${si},${qi},this.value)" onkeydown="navigateMark(event,${si},${qi})"/></td>`).join('')}
       <td id="tot-${si}" class="tc" style="background:${ab?'':'#fffff0'}">${ab?'—':tot}</td>
       <td id="pct-${si}" class="pc" style="background:${ab?'':'#fffff0'};color:${ab?'inherit':'#393768'};font-weight:600">${ab?'—':pct+'%'}</td>
+      <td id="sas-${si}" class="tc" style="background:#f5f0ff;color:#393768;font-weight:700">${getSasamsMark(s.marks)}</td>
       <td id="lvl-${si}"><span class="lb ${lv.cls}">${ab?'ABS':lv.label}</span></td>
       <td style="text-align:center;padding:2px;border-bottom:1px solid var(--paper3)"><button onclick="deleteStudent(${si})" style="background:none;border:none;color:#c0392b;cursor:pointer;font-size:14px;font-weight:700;padding:2px 5px;border-radius:3px;line-height:1" title="Remove learner">✕</button></td></tr>\``;
   }).join('');
@@ -498,9 +523,11 @@ function updateMark(si,qi,val){
   const totEl=document.getElementById(`tot-${si}`);
   const pctEl=document.getElementById(`pct-${si}`);
   const lvlEl=document.getElementById(`lvl-${si}`);
+  const sasEl=document.getElementById(`sas-${si}`);
   const rowEl=document.getElementById(`row-${si}`);
   if(totEl)totEl.textContent=ab?'—':tot;
   if(pctEl){pctEl.textContent=ab?'—':pct+'%';pctEl.style.color=ab?'inherit':'#393768';}
+  if(sasEl)sasEl.textContent=getSasamsMark(marks);
   if(lvlEl)lvlEl.innerHTML=`<span class="lb ${lv.cls}">${ab?'ABS':lv.label}</span>`;
   if(rowEl)rowEl.className=ab?'absent':'';
 }
@@ -1561,6 +1588,7 @@ async function saveAnalysis(silent=false){
       circuit:m.circuit||'',
       stream:m.stream||'',
       target:m.target||'50',
+      sasams_total:m.sasams?Number(m.sasams):null,
       questions:JSON.stringify(questions),
       students:JSON.stringify(students),
       spip_data:JSON.stringify(spipToSave),
@@ -1653,6 +1681,7 @@ async function loadAnalysis(id){
   setField('f-circuit',a.circuit);
   setField('f-stream',a.stream);
   setField('f-target',a.target);
+  setField('f-sasams',a.sasams_total||'');
   setField('f-subject',a.subject);
   setField('f-grade',a.grade);
   updateMeta();renderQConfig();
@@ -1717,6 +1746,7 @@ async function duplicateAnalysis(id){
   // Blank the things that must be new
   setField('f-task','');
   setField('f-date','');
+  setField('f-sasams','');  // new paper = new SA-SAMS total
 
   // Clear any SPIP text carried in memory
   if(window._allSpipValues)window._allSpipValues['__new__']={};
@@ -1756,6 +1786,7 @@ function newAnalysis(){
   students=[];
   document.getElementById('f-task').value='';
   document.getElementById('f-date').value='';
+  const sasEl=document.getElementById('f-sasams'); if(sasEl)sasEl.value='';
   updateMeta();renderQConfig();
   showPage('entry');
   // Fresh blank analysis — nothing saved, nothing unsaved yet
@@ -2290,6 +2321,87 @@ function focusMarkCell(si,qi){
       input.select();
     }
   }
+}
+
+// ── PRINT SA-SAMS LIST ───────────────────────────────────────────────────────
+// A clean, alphabetical list of learners with their converted SA-SAMS marks,
+// ready to hand to the admin staff who capture into SA-SAMS.
+// Names are surname-first by convention, so a plain A-Z sort sorts by surname.
+function printSasamsList(){
+  const m=getMeta();
+  const sasamsMax=getSasamsTotal();
+  const paperMax=getMax();
+
+  // Only learners with a name; sort A-Z (surname first by convention)
+  const rows=students
+    .filter(s=>s.name&&s.name.trim())
+    .map(s=>({name:s.name.trim(),mark:getSasamsMark(s.marks)}))
+    .sort((a,b)=>a.name.localeCompare(b.name,'en',{sensitivity:'base'}));
+
+  if(rows.length===0){
+    alert('There are no learners to print. Add or import learner names first.');
+    return;
+  }
+
+  const outOf = sasamsMax ? sasamsMax : paperMax;
+  const converted = sasamsMax && sasamsMax!==paperMax;
+
+  const html=`<!DOCTYPE html><html><head><meta charset="utf-8">
+<title>SA-SAMS Mark List</title>
+<style>
+  @page{size:A4 portrait;margin:15mm}
+  body{font-family:Arial,Helvetica,sans-serif;font-size:11pt;color:#000;margin:0}
+  h1{font-size:15pt;margin:0 0 2px;text-align:center;text-transform:uppercase;letter-spacing:0.5px}
+  .sub{text-align:center;font-size:11pt;margin-bottom:10px}
+  .meta{display:flex;flex-wrap:wrap;gap:6px 26px;font-size:10.5pt;margin-bottom:10px;
+        border-top:1.5px solid #000;border-bottom:1.5px solid #000;padding:6px 0}
+  .meta b{font-weight:700}
+  .note{font-size:10pt;margin-bottom:8px;font-style:italic}
+  table{width:100%;border-collapse:collapse}
+  th,td{border:1px solid #000;padding:5px 7px;font-size:11pt}
+  th{background:#eee;font-weight:700;text-align:left}
+  td.num{width:34px;text-align:center;font-size:10pt;color:#444}
+  td.mark{width:110px;text-align:center;font-weight:700;font-size:12pt}
+  .abs{color:#777;font-weight:700}
+  .sig{margin-top:26px;display:flex;gap:40px}
+  .sig div{flex:1;border-top:1px solid #000;padding-top:4px;font-size:10pt}
+  @media print{.noprint{display:none}}
+</style></head><body>
+  <h1>SA-SAMS Mark List</h1>
+  <div class="sub">${m.school||'Evander High School'}</div>
+  <div class="meta">
+    <span><b>Educator:</b> ${m.educator||''}</span>
+    <span><b>Subject:</b> ${m.subject||''}</span>
+    <span><b>Grade:</b> ${m.grade||''}</span>
+    <span><b>Task:</b> ${m.task||''}</span>
+    <span><b>Date:</b> ${m.date||''}</span>
+    <span><b>Marks out of:</b> ${outOf}</span>
+  </div>
+  ${converted?`<div class="note">Marks have been converted from the paper total (${paperMax}) to the SA-SAMS total (${sasamsMax}).</div>`:''}
+  <table>
+    <thead><tr>
+      <th class="num">#</th>
+      <th>Learner (Surname first)</th>
+      <th class="mark">Mark /${outOf}</th>
+    </tr></thead>
+    <tbody>
+      ${rows.map((r,i)=>`<tr>
+        <td class="num">${i+1}</td>
+        <td>${r.name}</td>
+        <td class="mark ${r.mark==='A'?'abs':''}">${r.mark}</td>
+      </tr>`).join('')}
+    </tbody>
+  </table>
+  <div class="sig">
+    <div>Educator signature &amp; date</div>
+    <div>Captured by (SA-SAMS) &amp; date</div>
+  </div>
+</body></html>`;
+
+  const win=window.open('','_blank');
+  win.document.write(html);
+  win.document.close();
+  setTimeout(()=>win.print(),500);
 }
 
 // ── PRINT ALL REPORTS ────────────────────────────────────────────────────────
