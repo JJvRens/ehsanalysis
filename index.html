@@ -1621,6 +1621,7 @@ async function loadMyAnalyses(){
         <div style="font-size:11px;color:var(--ink3);margin-top:1px">${a.subject||''} ${a.grade?'Gr '+a.grade:''}</div>
       </div>
       <button onclick="loadAnalysis('${a.id}')" style="padding:3px 10px;font-size:11px;background:var(--green-pale);border:1px solid var(--green-light);color:#393768;border-radius:3px;cursor:pointer;font-family:var(--sans)">Load</button>
+      <button onclick="duplicateAnalysis('${a.id}')" title="Start a new analysis with the same learners and settings" style="padding:3px 10px;font-size:11px;background:white;border:1px solid var(--green-light);color:#393768;border-radius:3px;cursor:pointer;font-family:var(--sans)">⧉ Duplicate</button>
       <button onclick="deleteAnalysis('${a.id}')" style="padding:3px 8px;font-size:11px;background:none;border:1px solid #e8b4b4;color:var(--red);border-radius:3px;cursor:pointer;font-family:var(--sans)">✕</button>
     </div>`).join('');
 }
@@ -1663,6 +1664,78 @@ async function loadAnalysis(id){
   _lastSavedAt=a.updated_at?new Date(a.updated_at):new Date();
   showLastSaved();
   // Close drawer
+  toggleDrawer(false);
+}
+
+// ── DUPLICATE AN ANALYSIS ───────────────────────────────────────────────────
+// Starts a brand-new analysis that keeps the same learners and the same
+// subject/grade/circuit/stream/target/school/educator, but with:
+//   • all marks reset to 0
+//   • a fresh default question set (new test = new questions)
+//   • blank task name and date
+//   • no SPIP content
+async function duplicateAnalysis(id){
+  // Guard against wiping unsaved work in the current analysis
+  if(_hasUnsavedChanges){
+    if(!confirm('You have unsaved changes. Duplicate anyway? Your unsaved changes will be lost.'))return;
+  }
+
+  const res=await supaFetch(`/rest/v1/analyses?id=eq.${id}&select=*`);
+  if(!res.ok||!res.data||res.data.length===0){
+    alert('Could not load that analysis to duplicate.');
+    return;
+  }
+  const a=res.data[0];
+
+  // Pull the learner names across, but zero out every mark
+  let srcStudents=[];
+  try{srcStudents=JSON.parse(a.students)||[];}catch{srcStudents=[];}
+
+  // Reset to the default question set — the teacher configures the new test
+  currentAnalysisId=null;
+  questions=[
+    {label:"Q1",topic:"Multiple choice",max:5},{label:"Q2",topic:"Matching items",max:3},
+    {label:"Q3",topic:"True/False items",max:2},{label:"Q4",topic:"System Technologies",max:10},
+    {label:"Q5",topic:"Social Implications",max:10},{label:"Q6",topic:"Solution Development",max:5},
+    {label:"Q7",topic:"Integrated Scenario",max:15},
+  ];
+
+  // Carry the learners over with blank marks sized to the new question set
+  students=srcStudents
+    .filter(s=>s&&s.name&&s.name.trim())
+    .map(s=>({name:s.name,marks:questions.map(()=>0)}));
+  if(students.length===0)students=[{name:'',marks:questions.map(()=>0)}];
+
+  // Keep the settings that don't change between tests
+  const setField=(fid,val)=>{const el=document.getElementById(fid);if(el)el.value=val||'';};
+  setField('f-school',a.school);
+  setField('f-educator',a.educator);
+  setField('f-subject',a.subject);
+  setField('f-grade',a.grade);
+  setField('f-circuit',a.circuit);
+  setField('f-stream',a.stream);
+  setField('f-target',a.target);
+
+  // Blank the things that must be new
+  setField('f-task','');
+  setField('f-date','');
+
+  // Clear any SPIP text carried in memory
+  if(window._allSpipValues)window._allSpipValues['__new__']={};
+  window._spipRendered=false;
+  window._fnRendered=false;
+
+  updateMeta();renderQConfig();
+  showPage('entry');
+
+  // It's a new, unsaved analysis — reset save state
+  document.getElementById('save-btn').textContent='💾 Save';
+  _autoSaveEnabled=false;
+  _hasUnsavedChanges=false;
+  _lastSavedAt=null;
+  clearInterval(_statusTicker);
+  setAutoSaveStatus('New copy — enter a task name, then add marks','#393768');
+
   toggleDrawer(false);
 }
 
