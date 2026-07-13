@@ -303,7 +303,8 @@ tr.absent td{opacity:0.65;}
         <input type="file" id="excel-add" accept=".xlsx,.xls,.csv" style="display:none" onchange="importFromExcel(this,'add')"/>
       </label>
       <span id="import-status" style="font-size:11px;font-weight:600;color:#4a4880"></span>
-      <button onclick="printSasamsList()" title="Print an alphabetical list of learners with their SA-SAMS marks" style="margin-left:auto;padding:5px 14px;background:#ccaa00;color:#1a1930;border:none;border-radius:3px;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:0.05em;font-family:var(--sans)">⎙ SA-SAMS List</button>
+      <button onclick="sortLearners()" title="Sort learners alphabetically (surname first). Marks stay with each learner." style="margin-left:auto;padding:5px 14px;background:white;color:#393768;border:1px solid var(--green-light);border-radius:3px;font-size:11px;font-weight:600;cursor:pointer;letter-spacing:0.05em;font-family:var(--sans)">↓A–Z Sort learners</button>
+      <button onclick="printSasamsList()" title="Print an alphabetical list of learners with their SA-SAMS marks" style="padding:5px 14px;background:#ccaa00;color:#1a1930;border:none;border-radius:3px;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:0.05em;font-family:var(--sans)">⎙ SA-SAMS List</button>
     </div>
   </div>
 
@@ -533,6 +534,36 @@ function updateMark(si,qi,val){
 }
 
 function addStudent(){students.push({name:'',marks:questions.map(()=>0)});renderTable();}
+
+// ── SORT LEARNERS ALPHABETICALLY ────────────────────────────────────────────
+// One-click A–Z sort. Each learner's marks travel with their name (name and
+// marks live in the same object), so nobody's marks can land on the wrong row.
+// Names are surname-first by convention, so a plain A–Z sort sorts by surname.
+function sortLearners(){
+  const named=students.filter(s=>s.name&&s.name.trim());
+  if(named.length<2){
+    alert('There is nothing to sort yet — add or import learner names first.');
+    return;
+  }
+  if(!confirm('Sort all learners alphabetically (A–Z by surname)?\n\nEach learner keeps their own marks.'))return;
+
+  // Blank rows get pushed to the bottom so they don't break up the list
+  const blanks=students.filter(s=>!s.name||!s.name.trim());
+  named.sort((a,b)=>a.name.trim().localeCompare(b.name.trim(),'en',{sensitivity:'base'}));
+  students=[...named,...blanks];
+
+  window._spipRendered=false;
+  window._fnRendered=false;
+  renderTable();
+  if(_autoSaveEnabled)scheduleAutoSave();
+
+  const status=document.getElementById('import-status');
+  if(status){
+    status.textContent='✓ Sorted '+named.length+' learners A–Z';
+    status.style.color='var(--green-mid)';
+    setTimeout(()=>{status.textContent='';},4000);
+  }
+}
 function deleteStudent(si){
   if(students.length<=1){alert('You need at least one learner.');return;}
   students.splice(si,1);
@@ -866,16 +897,16 @@ function renderSpip(){
         <div style="font-weight:700;font-size:11px;color:#5a3a00">${tl}</div>
         <div style="font-size:10px;color:#999;margin-top:3px">Class avg: ${item.pct}%</div>
       </td>
-      <td style="border:1px solid #000;padding:3px;vertical-align:top;width:85px"><textarea id="spip-challenges-${i}" style="${taS}" placeholder="Describe exact challenges observed in this topic..." oninput="saveSpipValues()"></textarea></td>
-      <td style="border:1px solid #000;padding:3px;vertical-align:top;width:75px"><textarea id="spip-targeted-${i}" style="${taS}" placeholder="e.g. Level 1–3 learners (approx. ${atRiskCount})" oninput="saveSpipValues()"></textarea></td>
+      <td style="border:1px solid #000;padding:3px;vertical-align:top;width:85px"><textarea id="spip-challenges-${i}" style="${taS}" placeholder="Describe exact challenges observed in this topic..." oninput="saveSpipValues(true)"></textarea></td>
+      <td style="border:1px solid #000;padding:3px;vertical-align:top;width:75px"><textarea id="spip-targeted-${i}" style="${taS}" placeholder="e.g. Level 1–3 learners (approx. ${atRiskCount})" oninput="saveSpipValues(true)"></textarea></td>
       <td style="border:1px solid #000;padding:3px;vertical-align:top;width:100px">
-        <textarea id="intervention-${i}" style="${taS}" placeholder="Describe intervention strategy / activity..." oninput="saveSpipValues()"></textarea>
+        <textarea id="intervention-${i}" style="${taS}" placeholder="Describe intervention strategy / activity..." oninput="saveSpipValues(true)"></textarea>
       </td>
-      <td style="border:1px solid #000;padding:3px;vertical-align:top;width:75px"><textarea id="spip-indicator-${i}" style="${taS}" placeholder="e.g. Learners achieve ≥${m.target}% in next assessment..." oninput="saveSpipValues()"></textarea></td>
-      <td style="border:1px solid #000;padding:3px;vertical-align:top;width:75px"><textarea id="spip-responsibility-${i}" style="${taS}" placeholder="e.g. Educator, HOD, SBST..." oninput="saveSpipValues()"></textarea></td>
-      <td style="border:1px solid #000;padding:3px;vertical-align:top;width:65px"><textarea id="spip-timelines-${i}" style="${taS}" placeholder="Specific date and time..." oninput="saveSpipValues()"></textarea></td>
-      <td style="border:1px solid #000;padding:3px;vertical-align:top;width:65px"><textarea id="spip-progress-${i}" style="${taS}" placeholder="Date completed..." oninput="saveSpipValues()"></textarea></td>
-      <td style="border:1px solid #000;padding:3px;vertical-align:top;width:65px"><textarea id="spip-monitoring-${i}" style="${taS}" placeholder="DH/DP/Principal comment..." oninput="saveSpipValues()"></textarea></td>
+      <td style="border:1px solid #000;padding:3px;vertical-align:top;width:75px"><textarea id="spip-indicator-${i}" style="${taS}" placeholder="e.g. Learners achieve ≥${m.target}% in next assessment..." oninput="saveSpipValues(true)"></textarea></td>
+      <td style="border:1px solid #000;padding:3px;vertical-align:top;width:75px"><textarea id="spip-responsibility-${i}" style="${taS}" placeholder="e.g. Educator, HOD, SBST..." oninput="saveSpipValues(true)"></textarea></td>
+      <td style="border:1px solid #000;padding:3px;vertical-align:top;width:65px"><textarea id="spip-timelines-${i}" style="${taS}" placeholder="Specific date and time..." oninput="saveSpipValues(true)"></textarea></td>
+      <td style="border:1px solid #000;padding:3px;vertical-align:top;width:65px"><textarea id="spip-progress-${i}" style="${taS}" placeholder="Date completed..." oninput="saveSpipValues(true)"></textarea></td>
+      <td style="border:1px solid #000;padding:3px;vertical-align:top;width:65px"><textarea id="spip-monitoring-${i}" style="${taS}" placeholder="DH/DP/Principal comment..." oninput="saveSpipValues(true)"></textarea></td>
     </tr>`;
   }).join('');
 
@@ -2764,7 +2795,12 @@ function toggleAuthMode(){
 }
 
 // Save SPIP typed values before leaving tab
-function saveSpipValues(){
+// Harvest the SPIP textarea values into memory.
+// fromUserEdit=true  → a teacher typed something, so schedule an auto-save
+// fromUserEdit=false → we're being called BY the save routine to collect values;
+//                      scheduling another save here would cause an endless
+//                      save → collect → schedule → save loop.
+function saveSpipValues(fromUserEdit=false){
   if(!window._allSpipValues)window._allSpipValues={};
   const key=currentAnalysisId||'__new__';
   // Only update if there are actual textareas rendered
@@ -2775,7 +2811,7 @@ function saveSpipValues(){
     if(ta.id)saved[ta.id]=ta.value;
   });
   window._allSpipValues[key]=saved;
-  scheduleAutoSave();
+  if(fromUserEdit)scheduleAutoSave();
 }
 
 // Restore SPIP typed values after render
