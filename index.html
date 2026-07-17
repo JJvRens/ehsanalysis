@@ -1914,6 +1914,7 @@ async function renderAdmin(){
           </div>
           <div style="display:flex;gap:12px;align-items:center;margin-top:6px">
             <button onclick="event.stopPropagation();printAdminFortnightly(\'${a.id}\')" style="flex-shrink:0;padding:5px 12px;background:#393768;color:white;border:none;border-radius:3px;font-size:11px;cursor:pointer;font-family:var(--sans)">⎙ Fortnightly</button>
+            <button onclick="event.stopPropagation();printFortnightlyWithStamp(\'${a.id}\')" style="flex-shrink:0;padding:5px 12px;background:#1b9e78;color:white;border:none;border-radius:3px;font-size:11px;cursor:pointer;font-family:var(--sans)">⎙ Print with Stamp</button>
             <label onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;color:${isPrinted?'#2a7a2a':'#393768'};font-weight:600;font-family:var(--sans)">
               <input type="checkbox" ${isPrinted?'checked':''} onchange="event.stopPropagation();togglePrinted('${a.id}')" style="width:16px;height:16px;cursor:pointer;accent-color:#2a7a2a"/>
               ${isPrinted?'Printed':'Mark as printed'}
@@ -2097,6 +2098,216 @@ function printAdminFortnightly(analysisId){
   win.document.close();
   setTimeout(()=>win.print(),600);
   // Auto-mark as printed (hybrid: auto-set, admin can untick later)
+  markPrinted(analysisId);
+}
+
+function printFortnightlyWithStamp(analysisId){
+  const a=window._adminAnalyses?.find(x=>x.id===analysisId);
+  if(!a)return;
+
+  // Control date: use the stored first-print date; fall back to today only on first ever print
+  const controlDateRaw=a.fortnightly_printed_at ? new Date(a.fortnightly_printed_at) : new Date();
+  const cy=controlDateRaw.getFullYear();
+  const cmm=String(controlDateRaw.getMonth()+1).padStart(2,'0');
+  const cdd=String(controlDateRaw.getDate()).padStart(2,'0');
+  const stampDateStr=`${cy} -${cmm}- ${cdd[0]} ${cdd[1]}`;
+
+  let qs=[],ss=[];
+  try{qs=JSON.parse(a.questions);}catch{}
+  try{ss=JSON.parse(a.students);}catch{}
+  const mx=qs.reduce((t,q)=>t+Number(q.max),0);
+  function getPctA(marks){
+    const smx=qs.reduce((t,q,i)=>{
+      if(!q.optional)return t+Number(q.max);
+      if(Number(marks[i]||0)>0)return t+Number(q.max);
+      return t;
+    },0)||mx;
+    return smx?Math.round(marks.reduce((a,v)=>a+(Number(v)||0),0)/smx*100):0;
+  }
+  function isAbsentA(marks){return marks.every(v=>(Number(v)||0)===0);}
+  const real=ss.filter(s=>s.name&&!isAbsentA(s.marks));
+  const subj=getSubjectAbbr(a.subject||a.profiles?.subject||'');
+  const school=a.profiles?.school||'Evander High School';
+  const educator=a.profiles?.full_name||'';
+  const task=a.task||'';
+  const date=a.date||'';
+  const grade=a.grade||a.profiles?.grade||'';
+  const stream=a.stream||'';
+  const circuit=a.circuit||'';
+  const subject=a.subject||a.profiles?.subject||'';
+  const streamCodes={BCM:'1',Sciences:'2',Languages:'3',Humanities:'4',Technical:'5'};
+  const sc=streamCodes[stream]||'1';
+  const lvlR=[
+    {label:'L1',sub:'0-29',min:0,max:29},{label:'L2',sub:'30-39',min:30,max:39},
+    {label:'L3',sub:'40-49',min:40,max:49},{label:'L4',sub:'50-59',min:50,max:59},
+    {label:'L5',sub:'60-69',min:60,max:69},{label:'L6',sub:'70-79',min:70,max:79},
+    {label:'L7',sub:'80-89',min:80,max:89},{label:'L8',sub:'90-100',min:90,max:100},
+  ];
+  const rows=real.map((s,i)=>{
+    const pct=getPctA(s.marks);
+    const cols=lvlR.map(lr=>{
+      let val='';
+      if(pct>=lr.min&&pct<=lr.max)val=String(pct);
+      return`<td style="text-align:center;padding:3px 5px;border:1px solid #bbb;font-size:11px;font-family:'Courier New',monospace;background:${val?'#fffde8':'white'}">${val}</td>`;
+    }).join('');
+    return`<tr style="background:${i%2===0?'white':'#f8fcf5'}">
+      <td style="text-align:center;padding:3px 5px;border:1px solid #bbb;font-size:11px">${i+1}</td>
+      <td style="padding:3px 7px;border:1px solid #bbb;font-size:11px;background:#d6d4f0">${s.name}</td>
+      <td style="text-align:center;padding:3px 5px;border:1px solid #bbb;font-size:11px">${subj}</td>
+      <td style="text-align:center;padding:3px 5px;border:1px solid #bbb;font-size:11px">${sc}</td>
+      ${cols}</tr>`;
+  }).join('');
+
+  const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"/>
+  <title>Fortnightly Report - ${educator}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Dancing+Script:wght@600&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">
+  <style>
+    *{box-sizing:border-box;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+    body{font-family:Arial,sans-serif;font-size:13px;padding:16px;background:white;position:relative;min-height:100vh;}
+    @media print{@page{margin:1cm;}}
+
+    /* ── Stamp ── */
+    .controlled-stamp{
+      position:fixed;
+      bottom:36px;
+      right:36px;
+      width:48mm;
+      height:27mm;
+      border:2.5px solid #1b9e78;
+      color:#1b9e78;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      padding:1.5mm 2mm;
+      text-align:center;
+      transform:rotate(-1.1deg);
+      filter:url(#inkrough);
+      -webkit-print-color-adjust:exact!important;
+      print-color-adjust:exact!important;
+    }
+    .stamp-title{font-family:'Pacifico',cursive;font-size:26px;line-height:1;margin-bottom:3.5mm;}
+    .stamp-date{font-family:'Roboto Mono',monospace;font-size:11.5px;font-weight:500;letter-spacing:.04em;margin-bottom:3.5mm;}
+    .stamp-name{font-family:'Dancing Script',cursive;font-size:14px;line-height:1.1;margin:0;}
+    .stamp-role{font-family:'Dancing Script',cursive;font-size:12.5px;line-height:1.1;margin:0;}
+
+    /* No-print controls */
+    .stamp-controls{
+      position:fixed;top:0;left:0;right:0;
+      background:#11202e;color:#e7eef5;
+      padding:10px 18px;
+      display:flex;align-items:center;gap:16px;
+      font-family:Arial,sans-serif;font-size:12px;
+      z-index:100;
+    }
+    .stamp-controls label{display:flex;align-items:center;gap:7px;cursor:pointer;font-weight:600;}
+    .stamp-controls input{width:16px;height:16px;accent-color:#1b9e78;cursor:pointer;}
+    .stamp-controls button{padding:6px 14px;background:#1b9e78;color:white;border:none;border-radius:5px;font-size:12px;cursor:pointer;font-family:Arial,sans-serif;}
+    body{padding-top:48px;}
+    @media print{.stamp-controls{display:none!important;}body{padding-top:0;}}
+  </style>
+
+  <!-- SVG ink texture filter -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <filter id="inkrough" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" seed="7" result="wob"/>
+      <feDisplacementMap in="SourceGraphic" in2="wob" scale="1.7" xChannelSelector="R" yChannelSelector="G" result="ink"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="11" result="fine"/>
+      <feColorMatrix in="fine" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 8 0 0 0 -1.304" result="fineMask"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.18" numOctaves="2" seed="5" result="patch"/>
+      <feColorMatrix in="patch" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 6 0 0 0 -0.78" result="patchMask"/>
+      <feComposite in="fineMask" in2="patchMask" operator="arithmetic" k1="1" k2="0" k3="0" k4="0" result="mask"/>
+      <feComposite in="ink" in2="mask" operator="in"/>
+    </filter>
+  </svg>
+  </head><body>
+
+  <!-- On-screen controls (never prints) -->
+  <div class="stamp-controls">
+    <label><input type="checkbox" id="stampToggle" checked onchange="document.querySelector('.controlled-stamp').style.display=this.checked?'flex':'none'"> Include stamp</label>
+    <button onclick="window.print()">⎙ Print</button>
+    <span style="color:#9fb3c6;font-size:11px">Stamp date: ${stampDateStr.trim()}</span>
+  </div>
+
+    <table style="width:100%;border:none;margin-bottom:3px;border-collapse:collapse">
+      <tr>
+        <td style="width:200px;vertical-align:middle">
+          <img src="https://ehsanalysis.pages.dev/gov.png" style="width:190px;height:auto;object-fit:contain" onerror="this.outerHTML='<div style=border:2px solid #1a5276;padding:6px 10px;display:inline-block><div style=font-size:18px;font-weight:700;color:#1a5276;letter-spacing:-1px>education</div><div style=font-size:9px;color:#1a5276;line-height:1.4>DEPARTMENT: EDUCATION<br>MPUMALANGA PROVINCE</div></div>'"/>
+        </td>
+        <td style="vertical-align:bottom;padding-bottom:3px;font-size:11px;color:#333;line-height:1.7">
+          Building No. 5, Government Boulevard, Riverside Park, Mpumalanga Province<br>
+          Private Bag X11341, Mbombela, 1200<br>
+          Tel: 013 766 55552/5115, Toll Free Line: 0800 203 116
+        </td>
+      </tr>
+    </table>
+    <table style="width:100%;border:none;margin-bottom:0;border-collapse:collapse">
+      <tr>
+        <td style="font-size:11px;font-style:italic;color:#444">Litiko le Temfundvo, Umnyango we Fundo</td>
+        <td style="text-align:center;font-size:11px;font-style:italic;color:#444">Departement van Onderwys</td>
+        <td style="text-align:right;font-size:11px;font-style:italic;color:#444">Ndzawulo ya Dyondzo</td>
+      </tr>
+    </table>
+    <div style="border-bottom:1px solid #aaa;margin-bottom:6px"></div>
+    <div style="text-align:center;margin-bottom:8px">
+      <div style="font-weight:700;font-size:13px">90% - 100% Schools</div>
+      <div style="font-weight:700;font-size:14px">Fortnightly Report</div>
+      <div style="font-weight:700;font-size:12px">Analysis of learner performance according to their streams</div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:12px;margin-bottom:4px">
+      <tr style="line-height:2">
+        <td style="width:140px;font-weight:700">NAME OF SCHOOL:</td><td style="width:240px">${school}</td>
+        <td style="width:70px;font-weight:700">CIRCUIT:</td><td>${circuit}</td>
+      </tr>
+      <tr style="line-height:2"><td style="font-weight:700">EDUCATOR:</td><td>${educator}</td><td style="font-weight:700">GRADE:</td><td>${grade}</td></tr>
+      <tr style="line-height:2"><td style="font-weight:700">SUBJECT:</td><td colspan="3">${subject}</td></tr>
+      <tr>
+        <td><strong>TASK:</strong></td><td>${task}</td>
+        <td colspan="2" style="font-size:11px">
+          <table style="border-collapse:collapse;float:right">
+            <tr>
+              <td style="padding:1px 6px;border:1px solid #bbb;font-weight:700">Stream</td>
+              ${['BCM','Sciences','Languages','Humanities','Technical'].map(s=>`<td style="padding:1px 6px;border:1px solid #bbb">${s}</td>`).join('')}
+            </tr>
+            <tr>
+              <td style="padding:1px 6px;border:1px solid #bbb;font-weight:700">Code</td>
+              ${[1,2,3,4,5].map(n=>`<td style="padding:1px 6px;border:1px solid #bbb;text-align:center">${n}</td>`).join('')}
+            </tr>
+          </table>
+        </td>
+      </tr>
+      <tr><td><strong>DATE:</strong></td><td>${date}</td><td colspan="2"></td></tr>
+    </table>
+    <table style="width:100%;border-collapse:collapse;margin-top:10px">
+      <thead>
+        <tr>
+          <th style="border:1px solid #bbb;padding:4px 5px;font-size:10px;background:#d6d4f0;text-align:center;width:30px">No.</th>
+          <th style="border:1px solid #bbb;padding:4px 7px;font-size:10px;background:#d6d4f0;text-align:left;min-width:150px">Learner</th>
+          <th style="border:1px solid #bbb;padding:4px 5px;font-size:10px;background:#d6d4f0;text-align:center">Subject</th>
+          <th style="border:1px solid #bbb;padding:4px 5px;font-size:10px;background:#d6d4f0;text-align:center">Stream<br>code</th>
+          ${lvlR.map(lr=>`<th style="border:1px solid #bbb;padding:4px 5px;font-size:10px;background:#9dc3e6;text-align:center;min-width:46px">${lr.label}<br><span style="font-weight:400">${lr.sub}</span></th>`).join('')}
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+
+  <!-- Stamp — fixed bottom-right, only shows if checkbox is ticked -->
+  <div class="controlled-stamp">
+    <div class="stamp-title">Controlled</div>
+    <div class="stamp-date">${stampDateStr}</div>
+    <div class="stamp-name">A Fourie</div>
+    <div class="stamp-role">Deputy Principal</div>
+  </div>
+
+  </body></html>`;
+
+  const win=window.open('','_blank');
+  win.document.write(html);
+  win.document.close();
+  // Wait for fonts to load before auto-printing so stamp renders correctly
+  win.addEventListener('load',()=>setTimeout(()=>win.print(),800));
   markPrinted(analysisId);
 }
 
@@ -2868,4 +3079,5 @@ window.showPage=function(id){
 </script>
 </body>
 </html>
+
 
