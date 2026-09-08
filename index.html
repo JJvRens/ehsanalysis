@@ -2482,13 +2482,24 @@ function printAdminItemAnalysis(analysisId){
   setTimeout(()=>win.print(),600);
 }
 
-function printAdminSpip(analysisId){
+async function printAdminSpip(analysisId){
   const a=window._adminAnalyses?.find(x=>x.id===analysisId);
   if(!a)return;
-  let qs=[],ss=[],spipVals={};
+
+  // Always fetch fresh spip_data directly so we have the latest saved values
+  let spipVals={};
+  try{
+    const fresh=await supaFetch(`/rest/v1/analyses?id=eq.${analysisId}&select=spip_data`);
+    if(fresh.ok&&fresh.data&&fresh.data[0]&&fresh.data[0].spip_data){
+      spipVals=JSON.parse(fresh.data[0].spip_data);
+    }
+  }catch(e){console.warn('spip_data fetch failed, using cached',e);
+    try{spipVals=JSON.parse(a.spip_data||'{}');}catch{}
+  }
+
+  let qs=[],ss=[];
   try{qs=JSON.parse(a.questions);}catch{}
   try{ss=JSON.parse(a.students);}catch{}
-  try{spipVals=JSON.parse(a.spip_data||'{}');}catch{}
   const mx=qs.reduce((t,q)=>t+Number(q.max),0);
   const educator=a.profiles?.full_name||'';
   const subject=a.subject||a.profiles?.subject||'';
