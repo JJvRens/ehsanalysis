@@ -2317,32 +2317,30 @@ function printAdminItemAnalysis(analysisId){
   const a=window._adminAnalyses?.find(x=>x.id===analysisId);
   if(!a)return;
 
-  // Stash the teacher's own current data
-  const _students=window.students;
-  const _questions=window.questions;
-  const _currentAnalysisId=window.currentAnalysisId;
-  const _meta={...window.meta||{}};
-
-  // Temporarily load the admin teacher's data into the global state
-  try{window.students=JSON.parse(a.students);}catch{window.students=[];}
-  try{window.questions=JSON.parse(a.questions);}catch{window.questions=[];}
-  window.currentAnalysisId=a.id;
-
-  // Patch getMeta so renderSummary picks up the right values
-  const _getMeta=window.getMeta;
-  window.getMeta=()=>({
-    school:a.profiles?.school||'Evander High School',
-    educator:a.profiles?.full_name||'',
-    subject:a.subject||a.profiles?.subject||'',
-    task:a.task||'',
-    date:a.date||'',
-    grade:a.grade||a.profiles?.grade||'',
-    target:a.target||50,
-    circuit:a.circuit||'',
-    stream:a.stream||''
+  // Stash teacher's own current state
+  const _students=[...students];
+  const _questions=[...questions];
+  const _fields={};
+  ['f-school','f-educator','f-subject','f-grade','f-task','f-date','f-circuit','f-stream','f-target'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)_fields[id]=el.value;
   });
 
-  // Render into the live summary container
+  // Load admin teacher's data into globals and DOM fields
+  try{students.length=0;JSON.parse(a.students).forEach(s=>students.push(s));}catch{}
+  try{questions.length=0;JSON.parse(a.questions).forEach(q=>questions.push(q));}catch{}
+  const setField=(id,val)=>{const el=document.getElementById(id);if(el)el.value=val||'';};
+  setField('f-school', a.profiles?.school||'Evander High School');
+  setField('f-educator', a.profiles?.full_name||'');
+  setField('f-subject', a.subject||a.profiles?.subject||'');
+  setField('f-grade', a.grade||a.profiles?.grade||'');
+  setField('f-task', a.task||'');
+  setField('f-date', a.date||'');
+  setField('f-circuit', a.circuit||'');
+  setField('f-stream', a.stream||'');
+  setField('f-target', a.target||'50');
+
+  // Render using the real function
   renderSummary();
 
   setTimeout(()=>{
@@ -2367,11 +2365,10 @@ function printAdminItemAnalysis(analysisId){
     win.document.close();
     setTimeout(()=>win.print(),600);
 
-    // Restore the teacher's own data
-    window.students=_students;
-    window.questions=_questions;
-    window.currentAnalysisId=_currentAnalysisId;
-    window.getMeta=_getMeta;
+    // Restore teacher's own state
+    students.length=0;_students.forEach(s=>students.push(s));
+    questions.length=0;_questions.forEach(q=>questions.push(q));
+    Object.entries(_fields).forEach(([id,val])=>{const el=document.getElementById(id);if(el)el.value=val;});
     window._spipRendered=false;
     window._fnRendered=false;
     renderSummary();
