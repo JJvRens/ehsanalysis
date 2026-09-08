@@ -1912,11 +1912,19 @@ async function renderAdmin(){
               <span style="color:var(--ink3);font-size:11px">View →</span>
             </div>
           </div>
-          <div style="display:flex;gap:12px;align-items:center;margin-top:6px">
-            <button onclick="event.stopPropagation();printAdminFortnightly(\'${a.id}\')" style="flex-shrink:0;padding:5px 12px;background:#393768;color:white;border:none;border-radius:3px;font-size:11px;cursor:pointer;font-family:var(--sans)">⎙ Fortnightly</button>
-            <button onclick="event.stopPropagation();printFortnightlyWithStamp(\'${a.id}\')" style="flex-shrink:0;padding:5px 12px;background:#1b9e78;color:white;border:none;border-radius:3px;font-size:11px;cursor:pointer;font-family:var(--sans)">⎙ Print with Stamp</button>
-            <button onclick="event.stopPropagation();printAdminItemAnalysis(\'${a.id}\')" style="flex-shrink:0;padding:5px 12px;background:#ccaa00;color:white;border:none;border-radius:3px;font-size:11px;cursor:pointer;font-family:var(--sans)">⎙ Item Analysis</button>
-            <button onclick="event.stopPropagation();printAdminSpip(\'${a.id}\')" style="flex-shrink:0;padding:5px 12px;background:#8b4513;color:white;border:none;border-radius:3px;font-size:11px;cursor:pointer;font-family:var(--sans)">⎙ SPIP</button>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px">
+            <div style="display:flex;gap:3px">
+              <button onclick="event.stopPropagation();printAdminFortnightly(\'${a.id}\')" style="flex-shrink:0;padding:5px 10px;background:#393768;color:white;border:none;border-radius:3px 0 0 3px;font-size:11px;cursor:pointer;font-family:var(--sans)">⎙ Fortnightly</button>
+              <button onclick="event.stopPropagation();printFortnightlyWithStamp(\'${a.id}\')" style="flex-shrink:0;padding:5px 8px;background:#1b9e78;color:white;border:none;border-radius:0 3px 3px 0;font-size:11px;cursor:pointer;font-family:var(--sans)" title="Print Fortnightly with Stamp">+ Stamp</button>
+            </div>
+            <div style="display:flex;gap:3px">
+              <button onclick="event.stopPropagation();printAdminItemAnalysis(\'${a.id}\')" style="flex-shrink:0;padding:5px 10px;background:#ccaa00;color:white;border:none;border-radius:3px 0 0 3px;font-size:11px;cursor:pointer;font-family:var(--sans)">⎙ Item Analysis</button>
+              <button onclick="event.stopPropagation();printAdminItemAnalysisWithStamp(\'${a.id}\')" style="flex-shrink:0;padding:5px 8px;background:#1b9e78;color:white;border:none;border-radius:0 3px 3px 0;font-size:11px;cursor:pointer;font-family:var(--sans)" title="Print Item Analysis with Stamp">+ Stamp</button>
+            </div>
+            <div style="display:flex;gap:3px">
+              <button onclick="event.stopPropagation();printAdminSpip(\'${a.id}\')" style="flex-shrink:0;padding:5px 10px;background:#8b4513;color:white;border:none;border-radius:3px 0 0 3px;font-size:11px;cursor:pointer;font-family:var(--sans)">⎙ SPIP</button>
+              <button onclick="event.stopPropagation();printAdminSpipWithStamp(\'${a.id}\')" style="flex-shrink:0;padding:5px 8px;background:#1b9e78;color:white;border:none;border-radius:0 3px 3px 0;font-size:11px;cursor:pointer;font-family:var(--sans)" title="Print SPIP with Stamp">+ Stamp</button>
+            </div>
             <label onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;color:${isPrinted?'#2a7a2a':'#393768'};font-weight:600;font-family:var(--sans)">
               <input type="checkbox" ${isPrinted?'checked':''} onchange="event.stopPropagation();togglePrinted('${a.id}')" style="width:16px;height:16px;cursor:pointer;accent-color:#2a7a2a"/>
               ${isPrinted?'Printed':'Mark as printed'}
@@ -2503,6 +2511,176 @@ async function printAdminSpip(analysisId){
   win.document.write(html);
   win.document.close();
   setTimeout(()=>win.print(),600);
+}
+
+// ── Shared stamp block for all admin stamp print functions ──────────────────
+function _stampBlock(stampDateStr){
+  return{
+    fonts:`<link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Dancing+Script:wght@600&family=Roboto+Mono:wght@500&display=swap" rel="stylesheet">`,
+    css:`
+    .controlled-stamp{position:fixed;bottom:36px;right:36px;width:48mm;height:27mm;
+      border:2.5px solid #1b9e78;color:#1b9e78;display:flex;flex-direction:column;
+      align-items:center;justify-content:center;padding:1.5mm 2mm;text-align:center;
+      transform:rotate(-1.1deg);filter:url(#inkrough);
+      -webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}
+    .stamp-title{font-family:'Pacifico',cursive;font-size:26px;line-height:1;margin-bottom:3.5mm;}
+    .stamp-date{font-family:'Roboto Mono',monospace;font-size:11.5px;font-weight:500;letter-spacing:.04em;margin-bottom:3.5mm;}
+    .stamp-name{font-family:'Dancing Script',cursive;font-size:14px;line-height:1.1;margin:0;}
+    .stamp-role{font-family:'Dancing Script',cursive;font-size:12.5px;line-height:1.1;margin:0;}
+    .stamp-controls{position:fixed;top:0;left:0;right:0;background:#11202e;color:#e7eef5;
+      padding:10px 18px;display:flex;align-items:center;gap:16px;font-family:Arial,sans-serif;font-size:12px;z-index:100;}
+    .stamp-controls label{display:flex;align-items:center;gap:7px;cursor:pointer;font-weight:600;}
+    .stamp-controls input{width:16px;height:16px;accent-color:#1b9e78;cursor:pointer;}
+    .stamp-controls button{padding:6px 14px;background:#1b9e78;color:white;border:none;border-radius:5px;font-size:12px;cursor:pointer;font-family:Arial,sans-serif;}
+    body{padding-top:48px!important;}
+    @media print{.stamp-controls{display:none!important;}body{padding-top:0!important;}}`,
+    svg:`<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <filter id="inkrough" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" seed="7" result="wob"/>
+      <feDisplacementMap in="SourceGraphic" in2="wob" scale="1.7" xChannelSelector="R" yChannelSelector="G" result="ink"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="11" result="fine"/>
+      <feColorMatrix in="fine" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 8 0 0 0 -1.304" result="fineMask"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.18" numOctaves="2" seed="5" result="patch"/>
+      <feColorMatrix in="patch" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 6 0 0 0 -0.78" result="patchMask"/>
+      <feComposite in="fineMask" in2="patchMask" operator="arithmetic" k1="1" k2="0" k3="0" k4="0" result="mask"/>
+      <feComposite in="ink" in2="mask" operator="in"/>
+    </filter></svg>`,
+    controls:`<div class="stamp-controls">
+      <label><input type="checkbox" id="stampToggle" checked onchange="document.querySelector('.controlled-stamp').style.display=this.checked?'flex':'none'"> Include stamp</label>
+      <button onclick="window.print()">⎙ Print</button>
+      <span style="color:#9fb3c6;font-size:11px">Stamp date: ${stampDateStr.trim()}</span>
+    </div>`,
+    div:`<div class="controlled-stamp">
+      <div class="stamp-title">Controlled</div>
+      <div class="stamp-date">${stampDateStr}</div>
+      <div class="stamp-name">A Fourie</div>
+      <div class="stamp-role">Deputy Principal</div>
+    </div>`
+  };
+}
+
+function _getStampDate(a){
+  const d=a.fortnightly_printed_at?new Date(a.fortnightly_printed_at):new Date();
+  const cy=d.getFullYear(),cmm=String(d.getMonth()+1).padStart(2,'0'),cdd=String(d.getDate()).padStart(2,'0');
+  return`${cy} -${cmm}- ${cdd[0]} ${cdd[1]}`;
+}
+
+function printAdminItemAnalysisWithStamp(analysisId){
+  const a=window._adminAnalyses?.find(x=>x.id===analysisId);
+  if(!a)return;
+  const stampDateStr=_getStampDate(a);
+  const sb=_stampBlock(stampDateStr);
+
+  // Stash and swap state exactly like printAdminItemAnalysis
+  const _students=[...students],_questions=[...questions];
+  const _fields={};
+  ['f-school','f-educator','f-subject','f-grade','f-task','f-date','f-circuit','f-stream','f-target'].forEach(id=>{
+    const el=document.getElementById(id);if(el)_fields[id]=el.value;
+  });
+  try{students.length=0;JSON.parse(a.students).forEach(s=>students.push(s));}catch{}
+  try{questions.length=0;JSON.parse(a.questions).forEach(q=>questions.push(q));}catch{}
+  const sf=(id,val)=>{const el=document.getElementById(id);if(el)el.value=val||'';};
+  sf('f-school',a.profiles?.school||'Evander High School');
+  sf('f-educator',a.profiles?.full_name||'');
+  sf('f-subject',a.subject||a.profiles?.subject||'');
+  sf('f-grade',a.grade||a.profiles?.grade||'');
+  sf('f-task',a.task||'');sf('f-date',a.date||'');
+  sf('f-circuit',a.circuit||'');sf('f-stream',a.stream||'');sf('f-target',a.target||'50');
+  renderSummary();
+
+  setTimeout(()=>{
+    const summary=captureRendered(document.getElementById('summary-content'));
+    let appCss='';
+    for(const sheet of document.styleSheets){try{for(const rule of sheet.cssRules){appCss+=rule.cssText+'\n';}}catch(e){}}
+    const win=window.open('','_blank');
+    win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"/>'
+      +'<title>Item Analysis - '+(a.profiles?.full_name||'')+'</title>'
+      +sb.fonts+'<style>'+appCss+sb.css
+      +'*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}'
+      +'body{background:white;padding:16px;margin:0;}'
+      +'.no-print,.ai-suggest-btn,button{display:none!important;}'
+      +'@media print{@page{margin:1cm;}}</style>'
+      +'</head><body>'+sb.svg+sb.controls+summary+sb.div+'</body></html>');
+    win.document.close();
+    win.addEventListener('load',()=>setTimeout(()=>win.print(),800));
+    // Restore
+    students.length=0;_students.forEach(s=>students.push(s));
+    questions.length=0;_questions.forEach(q=>questions.push(q));
+    Object.entries(_fields).forEach(([id,val])=>{const el=document.getElementById(id);if(el)el.value=val;});
+    window._spipRendered=false;window._fnRendered=false;renderSummary();
+  },300);
+}
+
+async function printAdminSpipWithStamp(analysisId){
+  const a=window._adminAnalyses?.find(x=>x.id===analysisId);
+  if(!a)return;
+  const stampDateStr=_getStampDate(a);
+  const sb=_stampBlock(stampDateStr);
+
+  // Fetch fresh spip_data
+  let spipVals={};
+  try{
+    const fresh=await supaFetch(`/rest/v1/analyses?id=eq.${analysisId}&select=spip_data`);
+    if(fresh.ok&&fresh.data&&fresh.data[0]&&fresh.data[0].spip_data)
+      spipVals=JSON.parse(fresh.data[0].spip_data);
+  }catch(e){try{spipVals=JSON.parse(a.spip_data||'{}');}catch{}}
+
+  let qs=[],ss=[];
+  try{qs=JSON.parse(a.questions);}catch{}
+  try{ss=JSON.parse(a.students);}catch{}
+  const mx=qs.reduce((t,q)=>t+Number(q.max),0);
+  const educator=a.profiles?.full_name||'';
+  const subject=a.subject||a.profiles?.subject||'';
+  const task=a.task||'',date=a.date||'',grade=a.grade||a.profiles?.grade||'';
+  const school=a.profiles?.school||'Evander High School',target=a.target||50;
+  function getPctA(marks){const smx=qs.reduce((t,q,i)=>{if(!q.optional)return t+Number(q.max);if(Number(marks[i]||0)>0)return t+Number(q.max);return t;},0)||mx;return smx?Math.round(marks.reduce((a,v)=>a+(Number(v)||0),0)/smx*100):0;}
+  function isAbsentA(marks){return marks.every(v=>(Number(v)||0)===0);}
+  const written=ss.filter(s=>s.name&&s.name.trim()&&!isAbsentA(s.marks));
+  const qStats=qs.map((q,qi)=>{const vals=written.map(s=>Number(s.marks[qi])||0);const avg=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:0;return{q,qi,avg:Math.round(avg*10)/10,pct:q.max?Math.round(avg/q.max*100):0};});
+  const weakest=[...qStats].sort((a,b)=>a.pct-b.pct).slice(0,2);
+  const headers=[{t:'No.',w:'22px',rotate:false},{t:'CHALLENGING TOPIC',w:'90px',rotate:true},{t:'SPECIFY THE EXACT CHALLENGES',w:'85px',rotate:true},{t:'TARGETED GROUP',w:'75px',rotate:true},{t:'INTERVENTION STRATEGY / ACTIVITY',w:'100px',rotate:true},{t:'PERFORMANCE INDICATOR',w:'75px',rotate:true},{t:'RESPONSIBILITY',w:'75px',rotate:true},{t:'TIMELINES',w:'65px',rotate:true},{t:'PROGRESS BY THE TEACHER',w:'65px',rotate:true},{t:'MONITORING By DH/DP/Principal',w:'65px',rotate:true}];
+  const thHTML=headers.map(h=>h.rotate?`<th style="border:1px solid #000;padding:3px;width:${h.w};height:110px;vertical-align:middle;text-align:center"><div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:9.5px;font-weight:700;line-height:1.3;white-space:normal;font-family:Arial;text-align:center;margin:auto">${h.t}</div></th>`:`<th style="border:1px solid #000;padding:6px 3px;font-size:10px;font-weight:700;width:${h.w};text-align:center;vertical-align:middle">${h.t}</th>`).join('');
+  const rows=weakest.map((item,i)=>`<tr>
+    <td style="border:1px solid #000;padding:3px;text-align:center;font-weight:700;font-size:10px;width:22px;vertical-align:middle">${i+1}</td>
+    <td style="border:1px solid #000;padding:3px;vertical-align:top;width:90px"><div style="font-weight:700;font-size:11px;color:#5a3a00">${item.q.label}: ${item.q.topic}</div><div style="font-size:10px;color:#999;margin-top:3px">Class avg: ${item.pct}%</div></td>
+    <td style="border:1px solid #000;padding:3px;vertical-align:top;width:85px"><div style="font-size:11px;font-family:Arial;min-height:55px">${spipVals['spip-challenges-'+i]||''}</div></td>
+    <td style="border:1px solid #000;padding:3px;vertical-align:top;width:75px"><div style="font-size:11px;font-family:Arial;min-height:55px">${spipVals['spip-targeted-'+i]||''}</div></td>
+    <td style="border:1px solid #000;padding:3px;vertical-align:top;width:100px"><div style="font-size:11px;font-family:Arial;min-height:55px">${spipVals['intervention-'+i]||''}</div></td>
+    <td style="border:1px solid #000;padding:3px;vertical-align:top;width:75px"><div style="font-size:11px;font-family:Arial;min-height:55px">${spipVals['spip-indicator-'+i]||''}</div></td>
+    <td style="border:1px solid #000;padding:3px;vertical-align:top;width:75px"><div style="font-size:11px;font-family:Arial;min-height:55px">${spipVals['spip-responsibility-'+i]||''}</div></td>
+    <td style="border:1px solid #000;padding:3px;vertical-align:top;width:65px"><div style="font-size:11px;font-family:Arial;min-height:55px">${spipVals['spip-timelines-'+i]||''}</div></td>
+    <td style="border:1px solid #000;padding:3px;vertical-align:top;width:65px"><div style="font-size:11px;font-family:Arial;min-height:55px">${spipVals['spip-progress-'+i]||''}</div></td>
+    <td style="border:1px solid #000;padding:3px;vertical-align:top;width:65px"><div style="font-size:11px;font-family:Arial;min-height:55px">${spipVals['spip-monitoring-'+i]||''}</div></td>
+  </tr>`).join('');
+
+  const body=`<table style="width:100%;border-collapse:collapse;border:2px solid #000;margin-bottom:10px"><tr>
+    <td style="width:110px;padding:8px;border-right:2px solid #000;text-align:center;vertical-align:middle"><img src="https://ehsanalysis.pages.dev/wapen.jpeg" style="width:80px;height:80px;object-fit:contain"/></td>
+    <td style="text-align:center;padding:10px;vertical-align:middle"><div style="font-size:20px;font-weight:700;letter-spacing:2px">${school.toUpperCase()}</div><div style="font-size:14px;font-weight:700;margin-top:6px">SUBJECT PERFORMANCE IMPROVEMENT PLAN (SPIP)</div></td>
+  </tr></table>
+  <table style="width:100%;border-collapse:collapse;margin-bottom:10px;font-size:14px">
+    <tr><td style="width:100px;font-weight:700;padding:4px">Educator:</td><td style="padding:4px">${educator}</td><td style="width:160px;font-weight:700;text-align:right;padding:4px 8px">Percentage target:</td><td style="width:80px;padding:4px;font-weight:700">${target}%</td></tr>
+    <tr><td style="font-weight:700;padding:4px">Subject:</td><td style="padding:4px">${subject}</td><td></td><td></td></tr>
+    <tr><td style="font-weight:700;padding:4px">Task:</td><td style="padding:4px">${task}</td><td></td><td></td></tr>
+    <tr><td style="font-weight:700;padding:4px">Date:</td><td style="padding:4px">${date}</td><td style="font-weight:700;text-align:right;padding:4px 8px">Grade:</td><td style="padding:4px;font-weight:700">${grade}</td></tr>
+  </table>
+  <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;table-layout:fixed;border:1px solid #000"><thead><tr>${thHTML}</tr></thead><tbody>${rows}</tbody></table></div>
+  <div style="display:flex;justify-content:space-between;gap:40px;margin-top:40px;font-size:12px">
+    <div style="flex:1"><div style="border-bottom:1px solid #000;margin-bottom:4px"></div><div>Educator signature &amp; date</div></div>
+    <div style="flex:1"><div style="border-bottom:1px solid #000;margin-bottom:4px"></div><div style="text-align:center">HOD signature &amp; date</div></div>
+    <div style="flex:1"><div style="border-bottom:1px solid #000;margin-bottom:4px"></div><div style="text-align:right">Principal signature &amp; date</div></div>
+  </div>`;
+
+  const win=window.open('','_blank');
+  win.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"/>'
+    +'<title>SPIP - '+educator+'</title>'
+    +sb.fonts+'<style>*{box-sizing:border-box;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;}'
+    +'body{font-family:Arial,sans-serif;font-size:11px;padding:16px;background:white;}'
+    +'@media print{@page{size:A4 landscape;margin:1cm;}}'+sb.css+'</style>'
+    +'</head><body>'+sb.svg+sb.controls+body+sb.div+'</body></html>');
+  win.document.close();
+  win.addEventListener('load',()=>setTimeout(()=>win.print(),800));
 }
 
 function showAdminDetail(analysisId){
