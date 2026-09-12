@@ -1458,6 +1458,14 @@ function showAppShell(){
   document.getElementById('user-name-display').textContent=currentProfile?.full_name||currentUser?.email||'Teacher';
   if(currentProfile?.is_admin){
     document.getElementById('tab-admin').style.display='flex';
+    // Admin-only users: hide teacher tabs and go straight to admin dashboard
+    if(currentProfile?.admin_only){
+      ['tab-entry','tab-summary','tab-spip','tab-fortnightly'].forEach(id=>{
+        const el=document.getElementById(id);if(el)el.style.display='none';
+      });
+      showPage('admin');
+      return;
+    }
   }
   updateMeta();renderQConfig();
   loadMyAnalyses();
@@ -1832,111 +1840,214 @@ function newAnalysis(){
 // ── ADMIN VIEW ──────────────────────────────────────────────────────────────
 async function renderAdmin(){
   const container=document.getElementById('admin-content');
-  container.innerHTML='<div style="color:var(--ink3);font-size:13px">Loading all teachers...</div>';
+  container.innerHTML='<div style="text-align:center;padding:40px;color:#555;font-size:16px">⏳ Loading teacher reports...</div>';
   const res=await supaFetch('/rest/v1/analyses?select=*,profiles(full_name,subject,grade,school,email)&order=updated_at.desc');
-  if(!res.ok||!res.data){container.innerHTML='<div style="color:var(--red)">Could not load data.</div>';return;}
-  if(res.data.length===0){container.innerHTML='<div style="color:var(--ink3);font-size:13px">No analyses submitted yet.</div>';return;}
-
-  // Store analyses globally for detail view
+  if(!res.ok||!res.data){container.innerHTML='<div style="color:red;padding:20px;font-size:15px">❌ Could not load data. Please refresh the page.</div>';return;}
+  if(res.data.length===0){container.innerHTML='<div style="padding:40px;font-size:15px;color:#555">No teacher reports yet.</div>';return;}
   window._adminAnalyses=res.data;
 
-  // Progress stats
-  const total=res.data.length;
-  const printed=res.data.filter(a=>a.fortnightly_printed_at).length;
-  const filter=window._adminPrintFilter||'all';
+  // ── Status helper ───────────────────────────────────────────────────────────
+  function getStatus(a){
+    let ss=[];try{ss=JSON.parse(a.students);}catch{}
+    let spipVals={};try{spipVals=JSON.parse(a.spip_data||'{}');}catch{}
+    const total=ss.filter(s=>s.name&&s.name.trim()).length;
+    const captured=ss.filter(s=>s.name&&s.name.trim()&&!s.marks.every(m=>(Number(m)||0)===0)).length;
+    const spipDone=spipVals['spip-challenges-0']&&spipVals['spip-challenges-0'].trim().length>0
+                 &&spipVals['spip-challenges-1']&&spipVals['spip-challenges-1'].trim().length>0;
+    const pct=total?Math.round(captured/total*100):0;
+    const isControlled=!!a.fortnightly_printed_at;
 
-  // Group by teacher_id
+    if(total===0||captured===0)return{
+      code:'empty',
+      colour:'#e53935',bgColour:'#fff5f5',borderColour:'#ffcdd2',
+      badge:'🔴 No marks yet',
+      message:'This teacher has not entered any marks yet.',
+      canPrint:false,total,captured,pct,spipDone
+    };
+    if(pct<90)return{
+      code:'busy',
+      colour:'#e65100',bgColour:'#fff8f0',borderColour:'#ffcc80',
+      badge:'🟡 Still busy',
+      message:`Only ${captured} of ${total} learners have marks (${pct}%). The teacher is still capturing.`,
+      canPrint:'warn',total,captured,pct,spipDone
+    };
+    if(!spipDone)return{
+      code:'spip',
+      colour:'#6a1aab',bgColour:'#fdf5ff',borderColour:'#e1bee7',
+      badge:'🟠 SPIP not done',
+      message:'Marks are complete but the teacher has not filled in the SPIP yet.',
+      canPrint:'warn',total,captured,pct,spipDone
+    };
+    if(isControlled)return{
+      code:'controlled',
+      colour:'#1b5e20',bgColour:'#f0faf0',borderColour:'#a5d6a7',
+      badge:'✅ Already printed',
+      message:'Controlled on '+new Date(a.fortnightly_printed_at).toLocaleDateString('en-ZA'),
+      canPrint:true,total,captured,pct,spipDone
+    };
+    return{
+      code:'ready',
+      colour:'#1b5e20',bgColour:'#f0faf0',borderColour:'#a5d6a7',
+      badge:'🟢 Ready to print',
+      message:`All ${captured} learners captured. SPIP complete.`,
+      canPrint:true,total,captured,pct,spipDone
+    };
+  }
+
+  // ── Summary bar ─────────────────────────────────────────────────────────────
+  const total=res.data.length;
+  const ready=res.data.filter(a=>{const s=getStatus(a);return s.code==='ready'||s.code==='controlled';}).length;
+  const controlled=res.data.filter(a=>!!a.fortnightly_printed_at).length;
+
+  const summaryBar=`
+    <div style="background:#393768;color:white;border-radius:10px;padding:18px 24px;margin-bottom:24px;display:flex;flex-wrap:wrap;gap:24px;align-items:center">
+      <div style="font-size:22px;font-weight:700">📋 Teacher Reports</div>
+      <div style="display:flex;gap:20px;flex-wrap:wrap;margin-left:auto">
+        <div style="text-align:center">
+          <div style="font-size:28px;font-weight:700">${total}</div>
+          <div style="font-size:12px;opacity:0.75">Total tasks</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:28px;font-weight:700;color:#81c784">${ready}</div>
+          <div style="font-size:12px;opacity:0.75">Ready to print</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:28px;font-weight:700;color:#ffcc80">${controlled}</div>
+          <div style="font-size:12px;opacity:0.75">Already printed</div>
+        </div>
+      </div>
+    </div>`;
+
+  // ── Group by teacher (order by most recent task) ─────────────────────────
   const byTeacher={};
   res.data.forEach(a=>{
     const key=a.teacher_id;
-    if(!byTeacher[key])byTeacher[key]={name:a.profiles?.full_name||a.profiles?.email||'Unknown Teacher',analyses:[]};
+    if(!byTeacher[key])byTeacher[key]={
+      name:a.profiles?.full_name||a.profiles?.email||'Unknown Teacher',
+      latestUpdate:a.updated_at,
+      analyses:[]
+    };
     byTeacher[key].analyses.push(a);
   });
+  // Sort teacher groups by most recent task
+  const sortedTeachers=Object.entries(byTeacher).sort((x,y)=>new Date(y[1].latestUpdate)-new Date(x[1].latestUpdate));
 
-  // Progress bar + filter controls
-  const controls=`
-    <div style="background:white;border:1px solid var(--border);border-radius:4px;padding:12px 16px;margin-bottom:1rem;display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between">
-      <div style="display:flex;align-items:center;gap:12px">
-        <span style="font-size:13px;font-weight:600;color:#393768">Fortnightly printing: ${printed} of ${total} done</span>
-        <div style="width:160px;height:8px;background:#eee;border-radius:4px;overflow:hidden">
-          <div style="height:100%;width:${total?Math.round(printed/total*100):0}%;background:#ccaa00;transition:width 0.3s"></div>
-        </div>
-      </div>
-      <div style="display:flex;gap:6px">
-        <button onclick="setAdminFilter('all')" style="padding:5px 12px;border:1px solid var(--border);border-radius:3px;font-size:11px;cursor:pointer;font-family:var(--sans);background:${filter==='all'?'#393768':'white'};color:${filter==='all'?'white':'#393768'}">All (${total})</button>
-        <button onclick="setAdminFilter('notprinted')" style="padding:5px 12px;border:1px solid var(--border);border-radius:3px;font-size:11px;cursor:pointer;font-family:var(--sans);background:${filter==='notprinted'?'#393768':'white'};color:${filter==='notprinted'?'white':'#393768'}">Not printed (${total-printed})</button>
-        <button onclick="setAdminFilter('printed')" style="padding:5px 12px;border:1px solid var(--border);border-radius:3px;font-size:11px;cursor:pointer;font-family:var(--sans);background:${filter==='printed'?'#393768':'white'};color:${filter==='printed'?'white':'#393768'}">Printed (${printed})</button>
-      </div>
-    </div>`;
+  // ── Tile builder ────────────────────────────────────────────────────────────
+  const teacherSections=sortedTeachers.map(([tid,teacher])=>{
+    const tiles=teacher.analyses.map(a=>{
+      const st=getStatus(a);
+      const subj=a.subject||a.profiles?.subject||'';
+      const grade=a.grade||a.profiles?.grade||'';
+      const dateStr=a.date?new Date(a.date).toLocaleDateString('en-ZA',{day:'numeric',month:'long',year:'numeric'}):'';
 
-  const teacherCards=Object.entries(byTeacher).map(([tid,teacher])=>{
-    // Filter analyses per current filter
-    const visibleAnalyses=teacher.analyses.filter(a=>{
-      if(filter==='printed')return !!a.fortnightly_printed_at;
-      if(filter==='notprinted')return !a.fortnightly_printed_at;
-      return true;
-    });
-    if(visibleAnalyses.length===0)return '';
-    return `
-    <div style="background:white;border:1px solid var(--border);border-radius:4px;margin-bottom:1rem;overflow:hidden">
-      <div style="background:#393768;color:white;padding:10px 14px;font-size:13px;font-weight:600;display:flex;justify-content:space-between;align-items:center">
-        <span>${teacher.name}</span>
-        <span style="font-size:11px;opacity:0.7;font-weight:400">${visibleAnalyses.length} analysis${visibleAnalyses.length!==1?'es':''}</span>
-      </div>
-      ${visibleAnalyses.map(a=>{
-        let qs=[],ss=[];
-        try{qs=JSON.parse(a.questions);}catch{}
-        try{ss=JSON.parse(a.students);}catch{}
-        const written=ss.filter(s=>s.name&&!s.marks.every(m=>(Number(m)||0)===0));
-        const mx=qs.reduce((t,q)=>t+Number(q.max),0);
-        const avg=written.length?Math.round(written.reduce((t,s)=>{
-          const tot=s.marks.reduce((a,v)=>a+(Number(v)||0),0);
-          return t+(mx?Math.round(tot/mx*100):0);
-        },0)/written.length):0;
-        const passing=written.filter(s=>{
-          const tot=s.marks.reduce((a,v)=>a+(Number(v)||0),0);
-          return mx&&Math.round(tot/mx*100)>=50;
-        }).length;
-        const isPrinted=!!a.fortnightly_printed_at;
-        const printedLabel=isPrinted?('Printed '+new Date(a.fortnightly_printed_at).toLocaleDateString()):'';
-        return`<div onclick="showAdminDetail('${a.id}')" style="padding:12px 14px;border-bottom:1px solid var(--border);font-size:12px;cursor:pointer;transition:background 0.1s;${isPrinted?'opacity:0.62;background:#fafaf5':''}" onmouseover="this.style.background='var(--green-pale)'" onmouseout="this.style.background='${isPrinted?'#fafaf5':'white'}'">
-          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between">
-            <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
-              <span style="font-weight:600;font-size:13px">${a.task||'Untitled'}</span>
-              <span style="color:var(--ink3)">${a.date||''}</span>
-              <span style="color:var(--ink3)">${a.subject||a.profiles?.subject||''} Gr ${a.grade||a.profiles?.grade||''}</span>
-            </div>
-            <div style="display:flex;gap:8px;align-items:center">
-              <span style="background:var(--green-pale);color:#393768;padding:2px 8px;border-radius:3px;font-weight:600">${written.length} learners · avg ${avg}%</span>
-              <span style="background:${passing/written.length>=0.5?'#eeedf8':'#fdf0f0'};color:${passing/written.length>=0.5?'#393768':'var(--red)'};padding:2px 8px;border-radius:3px;font-size:11px">${passing} passing</span>
-              <span style="color:var(--ink3);font-size:11px">View →</span>
-            </div>
+      // Progress bar
+      const progBar=st.total>0?`
+        <div style="margin:10px 0 4px">
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:#777;margin-bottom:3px">
+            <span>${st.captured} of ${st.total} learners captured</span>
+            <span style="font-weight:700;color:${st.colour}">${st.pct}%</span>
           </div>
-          <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px">
-            <div style="display:flex;gap:3px">
-              <button onclick="event.stopPropagation();printAdminFortnightly(\'${a.id}\')" style="flex-shrink:0;padding:5px 10px;background:#393768;color:white;border:none;border-radius:3px 0 0 3px;font-size:11px;cursor:pointer;font-family:var(--sans)">⎙ Fortnightly</button>
-              <button onclick="event.stopPropagation();printFortnightlyWithStamp(\'${a.id}\')" style="flex-shrink:0;padding:5px 8px;background:#1b9e78;color:white;border:none;border-radius:0 3px 3px 0;font-size:11px;cursor:pointer;font-family:var(--sans)" title="Print Fortnightly with Stamp">+ Stamp</button>
-            </div>
-            <div style="display:flex;gap:3px">
-              <button onclick="event.stopPropagation();printAdminItemAnalysis(\'${a.id}\')" style="flex-shrink:0;padding:5px 10px;background:#ccaa00;color:white;border:none;border-radius:3px 0 0 3px;font-size:11px;cursor:pointer;font-family:var(--sans)">⎙ Item Analysis</button>
-              <button onclick="event.stopPropagation();printAdminItemAnalysisWithStamp(\'${a.id}\')" style="flex-shrink:0;padding:5px 8px;background:#1b9e78;color:white;border:none;border-radius:0 3px 3px 0;font-size:11px;cursor:pointer;font-family:var(--sans)" title="Print Item Analysis with Stamp">+ Stamp</button>
-            </div>
-            <div style="display:flex;gap:3px">
-              <button onclick="event.stopPropagation();printAdminSpip(\'${a.id}\')" style="flex-shrink:0;padding:5px 10px;background:#8b4513;color:white;border:none;border-radius:3px 0 0 3px;font-size:11px;cursor:pointer;font-family:var(--sans)">⎙ SPIP</button>
-              <button onclick="event.stopPropagation();printAdminSpipWithStamp(\'${a.id}\')" style="flex-shrink:0;padding:5px 8px;background:#1b9e78;color:white;border:none;border-radius:0 3px 3px 0;font-size:11px;cursor:pointer;font-family:var(--sans)" title="Print SPIP with Stamp">+ Stamp</button>
-            </div>
-            <label onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:11px;color:${isPrinted?'#2a7a2a':'#393768'};font-weight:600;font-family:var(--sans)">
-              <input type="checkbox" ${isPrinted?'checked':''} onchange="event.stopPropagation();togglePrinted('${a.id}')" style="width:16px;height:16px;cursor:pointer;accent-color:#2a7a2a"/>
-              ${isPrinted?'Printed':'Mark as printed'}
+          <div style="height:8px;background:#e0e0e0;border-radius:4px;overflow:hidden">
+            <div style="height:100%;width:${st.pct}%;background:${st.colour};border-radius:4px;transition:width 0.4s"></div>
+          </div>
+        </div>`:'';
+
+      // Print buttons — big and clear
+      function printBtn(label,fn,stamp,disabled){
+        const bg=disabled?'#ccc':stamp?'#1b9e78':'#393768';
+        const cursor=disabled?'not-allowed':'pointer';
+        const onclick=disabled?'':`onclick="event.stopPropagation();${fn}('${a.id}')"`;
+        return`<button ${onclick} style="flex:1;padding:10px 6px;background:${bg};color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:${cursor};font-family:var(--sans);opacity:${disabled?0.5:1}">${label}</button>`;
+      }
+
+      // Warning onclick for not-ready buttons
+      function warnBtn(label,fn,stamp,msg){
+        const bg=stamp?'#1b9e78':'#393768';
+        return`<button onclick="event.stopPropagation();if(confirm('⚠️ ${msg.replace(/'/g,"\\'")}\\n\\nDo you still want to print?')){${fn}('${a.id}')}" style="flex:1;padding:10px 6px;background:${bg};color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);opacity:0.75">${label}</button>`;
+      }
+
+      let btnsFn,btnsStamp;
+      if(st.canPrint===true){
+        btnsFn=`
+          ${printBtn('📄 Fortnightly','printAdminFortnightly',false,false)}
+          ${printBtn('📄 Item Analysis','printAdminItemAnalysis',false,false)}
+          ${printBtn('📄 SPIP','printAdminSpip',false,false)}`;
+        btnsStamp=`
+          ${printBtn('🔖 Fortnightly + Stamp','printFortnightlyWithStamp',true,false)}
+          ${printBtn('🔖 Item Analysis + Stamp','printAdminItemAnalysisWithStamp',true,false)}
+          ${printBtn('🔖 SPIP + Stamp','printAdminSpipWithStamp',true,false)}`;
+      } else if(st.canPrint==='warn'){
+        btnsFn=`
+          ${warnBtn('📄 Fortnightly','printAdminFortnightly',false,st.message)}
+          ${warnBtn('📄 Item Analysis','printAdminItemAnalysis',false,st.message)}
+          ${warnBtn('📄 SPIP','printAdminSpip',false,st.message)}`;
+        btnsStamp=`
+          ${warnBtn('🔖 Fortnightly + Stamp','printFortnightlyWithStamp',true,st.message)}
+          ${warnBtn('🔖 Item Analysis + Stamp','printAdminItemAnalysisWithStamp',true,st.message)}
+          ${warnBtn('🔖 SPIP + Stamp','printAdminSpipWithStamp',true,st.message)}`;
+      } else {
+        btnsFn=`
+          ${printBtn('📄 Fortnightly','printAdminFortnightly',false,true)}
+          ${printBtn('📄 Item Analysis','printAdminItemAnalysis',false,true)}
+          ${printBtn('📄 SPIP','printAdminSpip',false,true)}`;
+        btnsStamp=`
+          ${printBtn('🔖 Fortnightly + Stamp','printFortnightlyWithStamp',true,true)}
+          ${printBtn('🔖 Item Analysis + Stamp','printAdminItemAnalysisWithStamp',true,true)}
+          ${printBtn('🔖 SPIP + Stamp','printAdminSpipWithStamp',true,true)}`;
+      }
+
+      const isPrinted=!!a.fortnightly_printed_at;
+      const printedNote=isPrinted?`<div style="font-size:11px;color:#1b5e20;font-weight:600;margin-top:6px">✅ Controlled on ${new Date(a.fortnightly_printed_at).toLocaleDateString('en-ZA')}</div>`:'';
+
+      return`
+        <div style="background:${st.bgColour};border:2px solid ${st.borderColour};border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:10px">
+          <!-- Status badge -->
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:6px">
+            <span style="background:${st.borderColour};color:${st.colour};padding:4px 12px;border-radius:20px;font-size:13px;font-weight:700">${st.badge}</span>
+            <span style="font-size:11px;color:#999">${dateStr}</span>
+          </div>
+          <!-- Task name -->
+          <div style="font-size:20px;font-weight:700;color:#222;line-height:1.2">${a.task||'Untitled Task'}</div>
+          <!-- Subject & grade -->
+          <div style="font-size:14px;color:#555">${subj}${grade?' · Grade '+grade:''}</div>
+          <!-- Status message -->
+          <div style="font-size:13px;color:${st.colour};font-weight:500">${st.message}</div>
+          <!-- Progress bar -->
+          ${progBar}
+          ${printedNote}
+          <!-- Print buttons: plain -->
+          <div style="margin-top:4px">
+            <div style="font-size:11px;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Print without stamp</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">${btnsFn}</div>
+          </div>
+          <!-- Print buttons: with stamp -->
+          <div>
+            <div style="font-size:11px;color:#1b9e78;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Print with stamp</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap">${btnsStamp}</div>
+          </div>
+          <!-- Controlled checkbox -->
+          <div style="border-top:1px solid ${st.borderColour};padding-top:10px;margin-top:2px">
+            <label onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:${isPrinted?'#1b5e20':'#555'};font-weight:600">
+              <input type="checkbox" ${isPrinted?'checked':''} onchange="event.stopPropagation();togglePrinted('${a.id}')" style="width:20px;height:20px;cursor:pointer;accent-color:#1b9e78"/>
+              ${isPrinted?'Mark as NOT printed yet':'Mark as printed (without stamp)'}
             </label>
-            ${printedLabel?`<span style="font-size:10px;color:#2a7a2a;font-family:var(--mono)">${printedLabel}</span>`:''}
           </div>
         </div>`;
-      }).join('')}
-    </div>`;
+    }).join('');
+
+    return`
+      <div style="margin-bottom:32px">
+        <div style="font-size:18px;font-weight:700;color:#393768;padding:10px 0 12px;border-bottom:3px solid #393768;margin-bottom:16px;display:flex;align-items:center;gap:10px">
+          👤 ${teacher.name}
+          <span style="font-size:13px;font-weight:400;color:#888">${teacher.analyses.length} task${teacher.analyses.length!==1?'s':''}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px">
+          ${tiles}
+        </div>
+      </div>`;
   }).join('');
 
-  container.innerHTML=controls+teacherCards;
+  container.innerHTML=summaryBar+teacherSections;
 }
 
 // Set the admin print filter and re-render
