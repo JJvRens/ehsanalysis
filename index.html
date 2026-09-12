@@ -1458,14 +1458,12 @@ function showAppShell(){
   document.getElementById('user-name-display').textContent=currentProfile?.full_name||currentUser?.email||'Teacher';
   if(currentProfile?.is_admin){
     document.getElementById('tab-admin').style.display='flex';
-    // Admin-only users: hide teacher tabs and go straight to admin dashboard
-    if(currentProfile?.admin_only){
-      ['tab-entry','tab-summary','tab-spip','tab-fortnightly'].forEach(id=>{
-        const el=document.getElementById(id);if(el)el.style.display='none';
-      });
-      showPage('admin');
-      return;
-    }
+    // Admin users: hide teacher tabs and go straight to admin dashboard
+    ['tab-entry','tab-summary','tab-spip','tab-fortnightly'].forEach(id=>{
+      const el=document.getElementById(id);if(el)el.style.display='none';
+    });
+    showPage('admin');
+    return;
   }
   updateMeta();renderQConfig();
   loadMyAnalyses();
@@ -1840,214 +1838,82 @@ function newAnalysis(){
 // ── ADMIN VIEW ──────────────────────────────────────────────────────────────
 async function renderAdmin(){
   const container=document.getElementById('admin-content');
-  container.innerHTML='<div style="text-align:center;padding:40px;color:#555;font-size:16px">⏳ Loading teacher reports...</div>';
+  container.innerHTML='<div style="text-align:center;padding:40px;color:#555;font-size:16px">⏳ Loading...</div>';
   const res=await supaFetch('/rest/v1/analyses?select=*,profiles(full_name,subject,grade,school,email)&order=updated_at.desc');
-  if(!res.ok||!res.data){container.innerHTML='<div style="color:red;padding:20px;font-size:15px">❌ Could not load data. Please refresh the page.</div>';return;}
-  if(res.data.length===0){container.innerHTML='<div style="padding:40px;font-size:15px;color:#555">No teacher reports yet.</div>';return;}
+  if(!res.ok||!res.data){container.innerHTML='<div style="color:red;padding:20px;font-size:15px">❌ Could not load. Please refresh.</div>';return;}
+  if(res.data.length===0){container.innerHTML='<div style="padding:40px;font-size:15px;color:#555">No reports yet.</div>';return;}
   window._adminAnalyses=res.data;
 
-  // ── Status helper ───────────────────────────────────────────────────────────
   function getStatus(a){
     let ss=[];try{ss=JSON.parse(a.students);}catch{}
-    let spipVals={};try{spipVals=JSON.parse(a.spip_data||'{}');}catch{}
+    let sp={};try{sp=JSON.parse(a.spip_data||'{}');}catch{}
     const total=ss.filter(s=>s.name&&s.name.trim()).length;
     const captured=ss.filter(s=>s.name&&s.name.trim()&&!s.marks.every(m=>(Number(m)||0)===0)).length;
-    const spipDone=spipVals['spip-challenges-0']&&spipVals['spip-challenges-0'].trim().length>0
-                 &&spipVals['spip-challenges-1']&&spipVals['spip-challenges-1'].trim().length>0;
+    const spipOk=sp['spip-challenges-0']&&sp['spip-challenges-0'].trim().length>0;
     const pct=total?Math.round(captured/total*100):0;
-    const isControlled=!!a.fortnightly_printed_at;
-
-    if(total===0||captured===0)return{
-      code:'empty',
-      colour:'#e53935',bgColour:'#fff5f5',borderColour:'#ffcdd2',
-      badge:'🔴 No marks yet',
-      message:'This teacher has not entered any marks yet.',
-      canPrint:false,total,captured,pct,spipDone
-    };
-    if(pct<90)return{
-      code:'busy',
-      colour:'#e65100',bgColour:'#fff8f0',borderColour:'#ffcc80',
-      badge:'🟡 Still busy',
-      message:`Only ${captured} of ${total} learners have marks (${pct}%). The teacher is still capturing.`,
-      canPrint:'warn',total,captured,pct,spipDone
-    };
-    if(!spipDone)return{
-      code:'spip',
-      colour:'#6a1aab',bgColour:'#fdf5ff',borderColour:'#e1bee7',
-      badge:'🟠 SPIP not done',
-      message:'Marks are complete but the teacher has not filled in the SPIP yet.',
-      canPrint:'warn',total,captured,pct,spipDone
-    };
-    if(isControlled)return{
-      code:'controlled',
-      colour:'#1b5e20',bgColour:'#f0faf0',borderColour:'#a5d6a7',
-      badge:'✅ Already printed',
-      message:'Controlled on '+new Date(a.fortnightly_printed_at).toLocaleDateString('en-ZA'),
-      canPrint:true,total,captured,pct,spipDone
-    };
-    return{
-      code:'ready',
-      colour:'#1b5e20',bgColour:'#f0faf0',borderColour:'#a5d6a7',
-      badge:'🟢 Ready to print',
-      message:`All ${captured} learners captured. SPIP complete.`,
-      canPrint:true,total,captured,pct,spipDone
-    };
+    const controlled=!!a.fortnightly_printed_at;
+    if(total===0||captured===0)return{code:'empty',colour:'#e53935',bg:'#ffeaea',border:'#f5c6c6',dot:'🔴',label:'No marks',canPrint:false,pct,captured,total,spipOk};
+    if(pct<90)return{code:'busy',colour:'#e65100',bg:'#fff3e0',border:'#ffcc80',dot:'🟡',label:`${captured}/${total} done`,canPrint:'warn',msg:`Only ${captured} of ${total} learners captured (${pct}%)`,pct,captured,total,spipOk};
+    if(!spipOk)return{code:'spip',colour:'#7b1fa2',bg:'#f3e5f5',border:'#ce93d8',dot:'🟠',label:'SPIP missing',canPrint:'warn',msg:'Marks complete but SPIP not filled in yet',pct,captured,total,spipOk};
+    if(controlled)return{code:'done',colour:'#2e7d32',bg:'#e8f5e9',border:'#a5d6a7',dot:'✅',label:'Printed',canPrint:true,pct,captured,total,spipOk};
+    return{code:'ready',colour:'#2e7d32',bg:'#e8f5e9',border:'#a5d6a7',dot:'🟢',label:'Ready',canPrint:true,pct,captured,total,spipOk};
   }
 
-  // ── Summary bar ─────────────────────────────────────────────────────────────
-  const total=res.data.length;
-  const ready=res.data.filter(a=>{const s=getStatus(a);return s.code==='ready'||s.code==='controlled';}).length;
-  const controlled=res.data.filter(a=>!!a.fortnightly_printed_at).length;
-
-  const summaryBar=`
-    <div style="background:#393768;color:white;border-radius:10px;padding:18px 24px;margin-bottom:24px;display:flex;flex-wrap:wrap;gap:24px;align-items:center">
-      <div style="font-size:22px;font-weight:700">📋 Teacher Reports</div>
-      <div style="display:flex;gap:20px;flex-wrap:wrap;margin-left:auto">
-        <div style="text-align:center">
-          <div style="font-size:28px;font-weight:700">${total}</div>
-          <div style="font-size:12px;opacity:0.75">Total tasks</div>
-        </div>
-        <div style="text-align:center">
-          <div style="font-size:28px;font-weight:700;color:#81c784">${ready}</div>
-          <div style="font-size:12px;opacity:0.75">Ready to print</div>
-        </div>
-        <div style="text-align:center">
-          <div style="font-size:28px;font-weight:700;color:#ffcc80">${controlled}</div>
-          <div style="font-size:12px;opacity:0.75">Already printed</div>
-        </div>
-      </div>
-    </div>`;
-
-  // ── Group by teacher (order by most recent task) ─────────────────────────
-  const byTeacher={};
+  // Group by teacher, sorted by most recent
+  const byT={};
   res.data.forEach(a=>{
-    const key=a.teacher_id;
-    if(!byTeacher[key])byTeacher[key]={
-      name:a.profiles?.full_name||a.profiles?.email||'Unknown Teacher',
-      latestUpdate:a.updated_at,
-      analyses:[]
-    };
-    byTeacher[key].analyses.push(a);
+    const k=a.teacher_id;
+    if(!byT[k])byT[k]={name:a.profiles?.full_name||'Unknown',ts:a.updated_at,list:[]};
+    byT[k].list.push(a);
   });
-  // Sort teacher groups by most recent task
-  const sortedTeachers=Object.entries(byTeacher).sort((x,y)=>new Date(y[1].latestUpdate)-new Date(x[1].latestUpdate));
+  const sorted=Object.entries(byT).sort((a,b)=>new Date(b[1].ts)-new Date(a[1].ts));
 
-  // ── Tile builder ────────────────────────────────────────────────────────────
-  const teacherSections=sortedTeachers.map(([tid,teacher])=>{
-    const tiles=teacher.analyses.map(a=>{
-      const st=getStatus(a);
+  // Build HTML
+  const sections=sorted.map(([tid,t])=>{
+    const tiles=t.list.map(a=>{
+      const s=getStatus(a);
       const subj=a.subject||a.profiles?.subject||'';
-      const grade=a.grade||a.profiles?.grade||'';
-      const dateStr=a.date?new Date(a.date).toLocaleDateString('en-ZA',{day:'numeric',month:'long',year:'numeric'}):'';
+      const gr=a.grade||a.profiles?.grade||'';
 
-      // Progress bar
-      const progBar=st.total>0?`
-        <div style="margin:10px 0 4px">
-          <div style="display:flex;justify-content:space-between;font-size:11px;color:#777;margin-bottom:3px">
-            <span>${st.captured} of ${st.total} learners captured</span>
-            <span style="font-weight:700;color:${st.colour}">${st.pct}%</span>
-          </div>
-          <div style="height:8px;background:#e0e0e0;border-radius:4px;overflow:hidden">
-            <div style="height:100%;width:${st.pct}%;background:${st.colour};border-radius:4px;transition:width 0.4s"></div>
-          </div>
-        </div>`:'';
+      // Progress bar (thin)
+      const prog=s.total>0?`<div style="height:5px;background:#ddd;border-radius:3px;overflow:hidden;margin:6px 0"><div style="height:100%;width:${s.pct}%;background:${s.colour};border-radius:3px"></div></div>`:'';
 
-      // Print buttons — big and clear
-      function printBtn(label,fn,stamp,disabled){
-        const bg=disabled?'#ccc':stamp?'#1b9e78':'#393768';
-        const cursor=disabled?'not-allowed':'pointer';
-        const onclick=disabled?'':`onclick="event.stopPropagation();${fn}('${a.id}')"`;
-        return`<button ${onclick} style="flex:1;padding:10px 6px;background:${bg};color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:${cursor};font-family:var(--sans);opacity:${disabled?0.5:1}">${label}</button>`;
-      }
-
-      // Warning onclick for not-ready buttons
-      function warnBtn(label,fn,stamp,msg){
+      // Buttons
+      function btn(icon,fn,stamp){
+        if(s.canPrint===false)return`<button disabled style="flex:1;padding:8px 4px;background:#ddd;color:#999;border:none;border-radius:5px;font-size:11px;cursor:not-allowed;font-family:var(--sans)">${icon}</button>`;
         const bg=stamp?'#1b9e78':'#393768';
-        return`<button onclick="event.stopPropagation();if(confirm('⚠️ ${msg.replace(/'/g,"\\'")}\\n\\nDo you still want to print?')){${fn}('${a.id}')}" style="flex:1;padding:10px 6px;background:${bg};color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);opacity:0.75">${label}</button>`;
+        const warn=s.canPrint==='warn'?`if(!confirm('⚠️ ${(s.msg||'').replace(/'/g,"\\'")}\\n\\nPrint anyway?'))return;`:'';
+        return`<button onclick="event.stopPropagation();${warn}${fn}('${a.id}')" style="flex:1;padding:8px 4px;background:${bg};color:white;border:none;border-radius:5px;font-size:11px;cursor:pointer;font-family:var(--sans);font-weight:600">${icon}</button>`;
       }
 
-      let btnsFn,btnsStamp;
-      if(st.canPrint===true){
-        btnsFn=`
-          ${printBtn('📄 Fortnightly','printAdminFortnightly',false,false)}
-          ${printBtn('📄 Item Analysis','printAdminItemAnalysis',false,false)}
-          ${printBtn('📄 SPIP','printAdminSpip',false,false)}`;
-        btnsStamp=`
-          ${printBtn('🔖 Fortnightly + Stamp','printFortnightlyWithStamp',true,false)}
-          ${printBtn('🔖 Item Analysis + Stamp','printAdminItemAnalysisWithStamp',true,false)}
-          ${printBtn('🔖 SPIP + Stamp','printAdminSpipWithStamp',true,false)}`;
-      } else if(st.canPrint==='warn'){
-        btnsFn=`
-          ${warnBtn('📄 Fortnightly','printAdminFortnightly',false,st.message)}
-          ${warnBtn('📄 Item Analysis','printAdminItemAnalysis',false,st.message)}
-          ${warnBtn('📄 SPIP','printAdminSpip',false,st.message)}`;
-        btnsStamp=`
-          ${warnBtn('🔖 Fortnightly + Stamp','printFortnightlyWithStamp',true,st.message)}
-          ${warnBtn('🔖 Item Analysis + Stamp','printAdminItemAnalysisWithStamp',true,st.message)}
-          ${warnBtn('🔖 SPIP + Stamp','printAdminSpipWithStamp',true,st.message)}`;
-      } else {
-        btnsFn=`
-          ${printBtn('📄 Fortnightly','printAdminFortnightly',false,true)}
-          ${printBtn('📄 Item Analysis','printAdminItemAnalysis',false,true)}
-          ${printBtn('📄 SPIP','printAdminSpip',false,true)}`;
-        btnsStamp=`
-          ${printBtn('🔖 Fortnightly + Stamp','printFortnightlyWithStamp',true,true)}
-          ${printBtn('🔖 Item Analysis + Stamp','printAdminItemAnalysisWithStamp',true,true)}
-          ${printBtn('🔖 SPIP + Stamp','printAdminSpipWithStamp',true,true)}`;
-      }
-
-      const isPrinted=!!a.fortnightly_printed_at;
-      const printedNote=isPrinted?`<div style="font-size:11px;color:#1b5e20;font-weight:600;margin-top:6px">✅ Controlled on ${new Date(a.fortnightly_printed_at).toLocaleDateString('en-ZA')}</div>`:'';
-
-      return`
-        <div style="background:${st.bgColour};border:2px solid ${st.borderColour};border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:10px">
-          <!-- Status badge -->
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:6px">
-            <span style="background:${st.borderColour};color:${st.colour};padding:4px 12px;border-radius:20px;font-size:13px;font-weight:700">${st.badge}</span>
-            <span style="font-size:11px;color:#999">${dateStr}</span>
-          </div>
-          <!-- Task name -->
-          <div style="font-size:20px;font-weight:700;color:#222;line-height:1.2">${a.task||'Untitled Task'}</div>
-          <!-- Subject & grade -->
-          <div style="font-size:14px;color:#555">${subj}${grade?' · Grade '+grade:''}</div>
-          <!-- Status message -->
-          <div style="font-size:13px;color:${st.colour};font-weight:500">${st.message}</div>
-          <!-- Progress bar -->
-          ${progBar}
-          ${printedNote}
-          <!-- Print buttons: plain -->
-          <div style="margin-top:4px">
-            <div style="font-size:11px;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Print without stamp</div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">${btnsFn}</div>
-          </div>
-          <!-- Print buttons: with stamp -->
-          <div>
-            <div style="font-size:11px;color:#1b9e78;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Print with stamp</div>
-            <div style="display:flex;gap:8px;flex-wrap:wrap">${btnsStamp}</div>
-          </div>
-          <!-- Controlled checkbox -->
-          <div style="border-top:1px solid ${st.borderColour};padding-top:10px;margin-top:2px">
-            <label onclick="event.stopPropagation()" style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:13px;color:${isPrinted?'#1b5e20':'#555'};font-weight:600">
-              <input type="checkbox" ${isPrinted?'checked':''} onchange="event.stopPropagation();togglePrinted('${a.id}')" style="width:20px;height:20px;cursor:pointer;accent-color:#1b9e78"/>
-              ${isPrinted?'Mark as NOT printed yet':'Mark as printed (without stamp)'}
-            </label>
-          </div>
-        </div>`;
-    }).join('');
-
-    return`
-      <div style="margin-bottom:32px">
-        <div style="font-size:18px;font-weight:700;color:#393768;padding:10px 0 12px;border-bottom:3px solid #393768;margin-bottom:16px;display:flex;align-items:center;gap:10px">
-          👤 ${teacher.name}
-          <span style="font-size:13px;font-weight:400;color:#888">${teacher.analyses.length} task${teacher.analyses.length!==1?'s':''}</span>
+      return`<div style="background:${s.bg};border:2px solid ${s.border};border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:2px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="font-size:15px;font-weight:700;color:#222">${a.task||'Untitled'}</span>
+          <span style="font-size:20px" title="${s.label}">${s.dot}</span>
         </div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px">
-          ${tiles}
+        <div style="font-size:12px;color:#666">${subj} · Gr ${gr}</div>
+        ${prog}
+        <div style="font-size:11px;color:${s.colour};font-weight:600">${s.label}</div>
+        <div style="display:flex;gap:4px;margin-top:6px">
+          ${btn('📄 Fortnightly','printAdminFortnightly',false)}
+          ${btn('📄 Item Analysis','printAdminItemAnalysis',false)}
+          ${btn('📄 SPIP','printAdminSpip',false)}
+        </div>
+        <div style="display:flex;gap:4px;margin-top:3px">
+          ${btn('🔖 Fort. + Stamp','printFortnightlyWithStamp',true)}
+          ${btn('🔖 Item + Stamp','printAdminItemAnalysisWithStamp',true)}
+          ${btn('🔖 SPIP + Stamp','printAdminSpipWithStamp',true)}
         </div>
       </div>`;
+    }).join('');
+
+    return`<div style="margin-bottom:24px">
+      <div style="font-size:16px;font-weight:700;color:#393768;padding:8px 0;border-bottom:2px solid #393768;margin-bottom:12px">👤 ${t.name}</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px">${tiles}</div>
+    </div>`;
   }).join('');
 
-  container.innerHTML=summaryBar+teacherSections;
+  container.innerHTML=sections;
 }
 
 // Set the admin print filter and re-render
