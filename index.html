@@ -269,6 +269,14 @@ tr.absent td{opacity:0.65;}
 </datalist></div>
       <div class="field-group"><label>Grade</label><input id="f-grade" value="" oninput="updateMeta()"/></div>
       <div class="field-group"><label>Task</label><input id="f-task" value="" oninput="updateMeta()"/></div>
+      <div class="field-group"><label>Task Type</label>
+        <select id="f-task-type" oninput="updateMeta()">
+          <option value="SBA" selected>SBA</option>
+          <option value="Intervention">Intervention Test</option>
+          <option value="Class Test">Class Test</option>
+          <option value="GEC">GEC</option>
+        </select>
+      </div>
       <div class="field-group"><label>Date</label><input id="f-date" type="date" value="" oninput="updateMeta()"/></div>
       <div class="field-group"><label>Circuit</label><input id="f-circuit" value="Highveld Ridge East" oninput="updateMeta()"/></div>
       <div class="field-group"><label>Stream</label>
@@ -385,6 +393,7 @@ function getMeta(){
     subject:document.getElementById('f-subject')?.value||'',
     grade:document.getElementById('f-grade')?.value||'',
     task:document.getElementById('f-task')?.value||'',
+    task_type:document.getElementById('f-task-type')?.value||'SBA',
     date:document.getElementById('f-date')?.value||'',
     circuit:document.getElementById('f-circuit')?.value||'',
     stream:document.getElementById('f-stream')?.value||'',
@@ -1619,6 +1628,7 @@ async function saveAnalysis(silent=false){
     const payload={
       teacher_id:currentUser.id,
       task:m.task||'Untitled',
+      task_type:m.task_type||'SBA',
       date:m.date||new Date().toISOString().slice(0,10),
       subject:m.subject||'',
       grade:m.grade||'',
@@ -1714,6 +1724,7 @@ async function loadAnalysis(id){
   // Restore ALL meta fields from the analysis
   const setField=(id,val)=>{const el=document.getElementById(id);if(el&&val!==undefined&&val!==null)el.value=val;};
   setField('f-task',a.task);
+  setField('f-task-type',a.task_type||'SBA');
   setField('f-date',a.date);
   setField('f-circuit',a.circuit);
   setField('f-stream',a.stream);
@@ -1822,6 +1833,7 @@ function newAnalysis(){
   ];
   students=[];
   document.getElementById('f-task').value='';
+  document.getElementById('f-task-type').value='SBA';
   document.getElementById('f-date').value='';
   const sasEl=document.getElementById('f-sasams'); if(sasEl)sasEl.value='';
   updateMeta();renderQConfig();
@@ -1859,17 +1871,26 @@ async function renderAdmin(){
     return{code:'ready',colour:'#2e7d32',bg:'#e8f5e9',border:'#a5d6a7',dot:'🟢',label:'Ready',canPrint:true,pct,captured,total,spipOk};
   }
 
-  // Filter
+  // Filters
   const filter=window._adminPrintFilter||'all';
+  const typeFilter=window._adminTypeFilter||'all';
   const total=res.data.length;
   const printed=res.data.filter(a=>!!a.fortnightly_printed_at).length;
   const notPrinted=total-printed;
 
+  // Collect unique task types
+  const types=[...new Set(res.data.map(a=>a.task_type||'SBA'))].sort();
+
   const filterBar=`
-    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px">
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px">
       <button onclick="setAdminFilter('all')" style="padding:8px 16px;border:2px solid ${filter==='all'?'#393768':'#ccc'};border-radius:6px;font-size:13px;cursor:pointer;font-family:var(--sans);background:${filter==='all'?'#393768':'white'};color:${filter==='all'?'white':'#393768'};font-weight:600">All (${total})</button>
       <button onclick="setAdminFilter('notprinted')" style="padding:8px 16px;border:2px solid ${filter==='notprinted'?'#e65100':'#ccc'};border-radius:6px;font-size:13px;cursor:pointer;font-family:var(--sans);background:${filter==='notprinted'?'#e65100':'white'};color:${filter==='notprinted'?'white':'#e65100'};font-weight:600">Not printed (${notPrinted})</button>
       <button onclick="setAdminFilter('printed')" style="padding:8px 16px;border:2px solid ${filter==='printed'?'#2e7d32':'#ccc'};border-radius:6px;font-size:13px;cursor:pointer;font-family:var(--sans);background:${filter==='printed'?'#2e7d32':'white'};color:${filter==='printed'?'white':'#2e7d32'};font-weight:600">Printed (${printed})</button>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:16px">
+      <span style="font-size:12px;color:#888;font-weight:600;margin-right:4px">Task type:</span>
+      <button onclick="setAdminTypeFilter('all')" style="padding:6px 12px;border:2px solid ${typeFilter==='all'?'#393768':'#ddd'};border-radius:6px;font-size:12px;cursor:pointer;font-family:var(--sans);background:${typeFilter==='all'?'#393768':'#f5f5f5'};color:${typeFilter==='all'?'white':'#555'};font-weight:600">All types</button>
+      ${types.map(tp=>`<button onclick="setAdminTypeFilter('${tp}')" style="padding:6px 12px;border:2px solid ${typeFilter===tp?'#393768':'#ddd'};border-radius:6px;font-size:12px;cursor:pointer;font-family:var(--sans);background:${typeFilter===tp?'#393768':'#f5f5f5'};color:${typeFilter===tp?'white':'#555'};font-weight:600">${tp}</button>`).join('')}
     </div>`;
 
   // Group by teacher, sorted by most recent
@@ -1883,10 +1904,11 @@ async function renderAdmin(){
 
   // Build HTML
   const sections=sorted.map(([tid,t])=>{
-    // Apply filter
+    // Apply filters
     const filtered=t.list.filter(a=>{
-      if(filter==='printed')return !!a.fortnightly_printed_at;
-      if(filter==='notprinted')return !a.fortnightly_printed_at;
+      if(filter==='printed'&&!a.fortnightly_printed_at)return false;
+      if(filter==='notprinted'&&a.fortnightly_printed_at)return false;
+      if(typeFilter!=='all'&&(a.task_type||'SBA')!==typeFilter)return false;
       return true;
     });
     if(filtered.length===0)return '';
@@ -1895,7 +1917,7 @@ async function renderAdmin(){
       const s=getStatus(a);
       const subj=a.subject||a.profiles?.subject||'';
       const gr=a.grade||a.profiles?.grade||'';
-
+      const taskType=a.task_type||'SBA';
       // Progress bar (thin)
       const prog=s.total>0?`<div style="height:5px;background:#ddd;border-radius:3px;overflow:hidden;margin:6px 0"><div style="height:100%;width:${s.pct}%;background:${s.colour};border-radius:3px"></div></div>`:'';
 
@@ -1912,7 +1934,7 @@ async function renderAdmin(){
           <span style="font-size:15px;font-weight:700;color:#222">${a.task||'Untitled'}</span>
           <span style="font-size:20px" title="${s.label}">${s.dot}</span>
         </div>
-        <div style="font-size:12px;color:#666">${subj} · Gr ${gr}</div>
+        <div style="font-size:12px;color:#666">${subj} · Gr ${gr} · <span style="background:#eee;padding:1px 6px;border-radius:3px;font-weight:600;color:#555">${taskType}</span></div>
         ${prog}
         <div style="font-size:11px;color:${s.colour};font-weight:600">${s.label}</div>
         <div style="display:flex;gap:4px;margin-top:6px">
@@ -1940,6 +1962,10 @@ async function renderAdmin(){
 // Set the admin print filter and re-render
 function setAdminFilter(f){
   window._adminPrintFilter=f;
+  renderAdmin();
+}
+function setAdminTypeFilter(f){
+  window._adminTypeFilter=f;
   renderAdmin();
 }
 
@@ -2327,7 +2353,7 @@ function printAdminItemAnalysis(analysisId){
   const _students=[...students];
   const _questions=[...questions];
   const _fields={};
-  ['f-school','f-educator','f-subject','f-grade','f-task','f-date','f-circuit','f-stream','f-target'].forEach(id=>{
+  ['f-school','f-educator','f-subject','f-grade','f-task','f-task-type','f-date','f-circuit','f-stream','f-target'].forEach(id=>{
     const el=document.getElementById(id);
     if(el)_fields[id]=el.value;
   });
@@ -2574,7 +2600,7 @@ function printAdminItemAnalysisWithStamp(analysisId){
   // Stash and swap state exactly like printAdminItemAnalysis
   const _students=[...students],_questions=[...questions];
   const _fields={};
-  ['f-school','f-educator','f-subject','f-grade','f-task','f-date','f-circuit','f-stream','f-target'].forEach(id=>{
+  ['f-school','f-educator','f-subject','f-grade','f-task','f-task-type','f-date','f-circuit','f-stream','f-target'].forEach(id=>{
     const el=document.getElementById(id);if(el)_fields[id]=el.value;
   });
   try{students.length=0;JSON.parse(a.students).forEach(s=>students.push(s));}catch{}
