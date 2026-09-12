@@ -1874,24 +1874,31 @@ async function renderAdmin(){
   // Filters
   const filter=window._adminPrintFilter||'all';
   const typeFilter=window._adminTypeFilter||'all';
+  const gradeFilter=window._adminGradeFilter||'all';
   const total=res.data.length;
   const printed=res.data.filter(a=>!!a.fortnightly_printed_at).length;
   const notPrinted=total-printed;
 
-  // Collect unique task types
+  // Collect unique task types and grades actually present
   const types=[...new Set(res.data.map(a=>a.task_type||'SBA'))].sort();
+  const grades=[...new Set(res.data.map(a=>a.grade||a.profiles?.grade||'').filter(Boolean))].sort();
+
+  function filterRow(label,current,options,setFn){
+    return`<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px">
+      <span style="font-size:12px;color:#888;font-weight:700;min-width:78px">${label}</span>
+      ${options.map(o=>`<button onclick="${setFn}('${o.val}')" style="padding:7px 14px;border:2px solid ${current===o.val?'#393768':'#ddd'};border-radius:6px;font-size:13px;cursor:pointer;font-family:var(--sans);background:${current===o.val?'#393768':'white'};color:${current===o.val?'white':'#444'};font-weight:600">${o.label}</button>`).join('')}
+    </div>`;
+  }
 
   const filterBar=`
-    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px;justify-content:space-between">
-      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
-        <button onclick="setAdminFilter('all')" style="padding:8px 16px;border:2px solid ${filter==='all'?'#393768':'#ccc'};border-radius:6px;font-size:13px;cursor:pointer;font-family:var(--sans);background:${filter==='all'?'#393768':'white'};color:${filter==='all'?'white':'#393768'};font-weight:600">All (${total})</button>
-        <button onclick="setAdminFilter('notprinted')" style="padding:8px 16px;border:2px solid ${filter==='notprinted'?'#e65100':'#ccc'};border-radius:6px;font-size:13px;cursor:pointer;font-family:var(--sans);background:${filter==='notprinted'?'#e65100':'white'};color:${filter==='notprinted'?'white':'#e65100'};font-weight:600">Not printed (${notPrinted})</button>
-        <button onclick="setAdminFilter('printed')" style="padding:8px 16px;border:2px solid ${filter==='printed'?'#2e7d32':'#ccc'};border-radius:6px;font-size:13px;cursor:pointer;font-family:var(--sans);background:${filter==='printed'?'#2e7d32':'white'};color:${filter==='printed'?'white':'#2e7d32'};font-weight:600">Printed (${printed})</button>
-      </div>
-      <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center">
-        <button onclick="setAdminTypeFilter('all')" style="padding:6px 12px;border:2px solid ${typeFilter==='all'?'#393768':'#ddd'};border-radius:6px;font-size:12px;cursor:pointer;font-family:var(--sans);background:${typeFilter==='all'?'#393768':'#f5f5f5'};color:${typeFilter==='all'?'white':'#555'};font-weight:600">All types</button>
-        ${types.map(tp=>`<button onclick="setAdminTypeFilter('${tp}')" style="padding:6px 12px;border:2px solid ${typeFilter===tp?'#393768':'#ddd'};border-radius:6px;font-size:12px;cursor:pointer;font-family:var(--sans);background:${typeFilter===tp?'#393768':'#f5f5f5'};color:${typeFilter===tp?'white':'#555'};font-weight:600">${tp}</button>`).join('')}
-      </div>
+    <div style="background:white;border:2px solid #eee;border-radius:8px;padding:14px 16px;margin-bottom:16px">
+      ${filterRow('Status',filter,[
+        {val:'all',label:`All (${total})`},
+        {val:'notprinted',label:`Not printed (${notPrinted})`},
+        {val:'printed',label:`Printed (${printed})`}
+      ],'setAdminFilter')}
+      ${filterRow('Task type',typeFilter,[{val:'all',label:'All types'},...types.map(tp=>({val:tp,label:tp}))],'setAdminTypeFilter')}
+      ${grades.length>1?filterRow('Grade',gradeFilter,[{val:'all',label:'All grades'},...grades.map(g=>({val:g,label:'Gr '+g}))],'setAdminGradeFilter'):''}
     </div>`;
 
   // Group by teacher, sorted by most recent
@@ -1910,6 +1917,7 @@ async function renderAdmin(){
       if(filter==='printed'&&!a.fortnightly_printed_at)return false;
       if(filter==='notprinted'&&a.fortnightly_printed_at)return false;
       if(typeFilter!=='all'&&(a.task_type||'SBA')!==typeFilter)return false;
+      if(gradeFilter!=='all'&&(a.grade||a.profiles?.grade||'')!==gradeFilter)return false;
       return true;
     });
     if(filtered.length===0)return '';
@@ -1967,6 +1975,10 @@ function setAdminFilter(f){
 }
 function setAdminTypeFilter(f){
   window._adminTypeFilter=f;
+  renderAdmin();
+}
+function setAdminGradeFilter(f){
+  window._adminGradeFilter=f;
   renderAdmin();
 }
 
