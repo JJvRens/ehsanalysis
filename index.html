@@ -1859,6 +1859,19 @@ async function renderAdmin(){
     return{code:'ready',colour:'#2e7d32',bg:'#e8f5e9',border:'#a5d6a7',dot:'🟢',label:'Ready',canPrint:true,pct,captured,total,spipOk};
   }
 
+  // Filter
+  const filter=window._adminPrintFilter||'all';
+  const total=res.data.length;
+  const printed=res.data.filter(a=>!!a.fortnightly_printed_at).length;
+  const notPrinted=total-printed;
+
+  const filterBar=`
+    <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:16px">
+      <button onclick="setAdminFilter('all')" style="padding:8px 16px;border:2px solid ${filter==='all'?'#393768':'#ccc'};border-radius:6px;font-size:13px;cursor:pointer;font-family:var(--sans);background:${filter==='all'?'#393768':'white'};color:${filter==='all'?'white':'#393768'};font-weight:600">All (${total})</button>
+      <button onclick="setAdminFilter('notprinted')" style="padding:8px 16px;border:2px solid ${filter==='notprinted'?'#e65100':'#ccc'};border-radius:6px;font-size:13px;cursor:pointer;font-family:var(--sans);background:${filter==='notprinted'?'#e65100':'white'};color:${filter==='notprinted'?'white':'#e65100'};font-weight:600">Not printed (${notPrinted})</button>
+      <button onclick="setAdminFilter('printed')" style="padding:8px 16px;border:2px solid ${filter==='printed'?'#2e7d32':'#ccc'};border-radius:6px;font-size:13px;cursor:pointer;font-family:var(--sans);background:${filter==='printed'?'#2e7d32':'white'};color:${filter==='printed'?'white':'#2e7d32'};font-weight:600">Printed (${printed})</button>
+    </div>`;
+
   // Group by teacher, sorted by most recent
   const byT={};
   res.data.forEach(a=>{
@@ -1870,7 +1883,15 @@ async function renderAdmin(){
 
   // Build HTML
   const sections=sorted.map(([tid,t])=>{
-    const tiles=t.list.map(a=>{
+    // Apply filter
+    const filtered=t.list.filter(a=>{
+      if(filter==='printed')return !!a.fortnightly_printed_at;
+      if(filter==='notprinted')return !a.fortnightly_printed_at;
+      return true;
+    });
+    if(filtered.length===0)return '';
+
+    const tiles=filtered.map(a=>{
       const s=getStatus(a);
       const subj=a.subject||a.profiles?.subject||'';
       const gr=a.grade||a.profiles?.grade||'';
@@ -1913,7 +1934,7 @@ async function renderAdmin(){
     </div>`;
   }).join('');
 
-  container.innerHTML=sections;
+  container.innerHTML=filterBar+sections;
 }
 
 // Set the admin print filter and re-render
