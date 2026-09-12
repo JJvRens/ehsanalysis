@@ -1879,9 +1879,17 @@ async function renderAdmin(){
   const printed=res.data.filter(a=>!!a.fortnightly_printed_at).length;
   const notPrinted=total-printed;
 
-  // Collect unique task types and grades actually present
+  // Collect unique task types
   const types=[...new Set(res.data.map(a=>a.task_type||'SBA'))].sort();
-  const grades=[...new Set(res.data.map(a=>a.grade||a.profiles?.grade||'').filter(Boolean))].sort();
+
+  // Normalise grade text (e.g. "Gr 12 (Key 2)", "Gr 9.1 / 9.3") down to a clean 8-12 value
+  function normGrade(raw){
+    const s=String(raw||'');
+    const m=s.match(/\b(8|9|10|11|12)\b/);
+    return m?m[1]:null;
+  }
+  const gradesPresent=[...new Set(res.data.map(a=>normGrade(a.grade||a.profiles?.grade)).filter(Boolean))];
+  const grades=['8','9','10','11','12'].filter(g=>gradesPresent.includes(g));
 
   function filterRow(label,current,options,setFn){
     return`<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px">
@@ -1917,7 +1925,7 @@ async function renderAdmin(){
       if(filter==='printed'&&!a.fortnightly_printed_at)return false;
       if(filter==='notprinted'&&a.fortnightly_printed_at)return false;
       if(typeFilter!=='all'&&(a.task_type||'SBA')!==typeFilter)return false;
-      if(gradeFilter!=='all'&&(a.grade||a.profiles?.grade||'')!==gradeFilter)return false;
+      if(gradeFilter!=='all'&&normGrade(a.grade||a.profiles?.grade)!==gradeFilter)return false;
       return true;
     });
     if(filtered.length===0)return '';
