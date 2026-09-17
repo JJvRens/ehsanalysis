@@ -1951,7 +1951,7 @@ async function renderAdmin(){
           <span style="font-size:15px;font-weight:700;color:#222">${a.task||'Untitled'}</span>
           <div style="text-align:right;flex-shrink:0;margin-left:6px">
             <span style="font-size:20px" title="${s.label}">${s.dot}</span>
-            <div style="font-size:9px;color:#999;white-space:nowrap">${a.created_at?new Date(a.created_at).toLocaleDateString('en-ZA'):''}</div>
+            <div style="font-size:9px;color:#999;white-space:nowrap;font-weight:700">${a.created_at?new Date(a.created_at).toLocaleDateString('en-ZA'):''}</div>
           </div>
         </div>
         <div style="font-size:12px;color:#666">${subj} · Gr ${gr} · <span style="background:#eee;padding:1px 6px;border-radius:3px;font-weight:600;color:#555">${taskType}</span></div>
