@@ -1515,6 +1515,11 @@ async function handleLogin(){
 
 // ── AUTO-SAVE ────────────────────────────────────────────────────────────────
 let _autoSaveTimer=null;
+// Guards against overlapping saveAnalysis() calls creating duplicate rows:
+// if a save is already in flight when another is requested, the second call
+// waits for the first to finish (so currentAnalysisId is set) and then runs
+// as an UPDATE instead of racing to INSERT a second row.
+let _saveInFlight=null;
 let _autoSaveEnabled=false; // only enable after first manual save or load
 let _lastSavedAt=null;      // Date of the last successful save
 let _hasUnsavedChanges=false;
@@ -1588,7 +1593,23 @@ function attachAutoSaveListeners(){
 }
 
 // ── SAVE / LOAD ANALYSES ────────────────────────────────────────────────────
+// Public entry point: serializes all calls through _saveInFlight so that if
+// a save is already running (e.g. an auto-save mid-flight while the teacher
+// keeps typing, or a manual click while auto-save is in progress), the new
+// call waits for the current one to finish — instead of racing ahead with
+// currentAnalysisId still null and creating a duplicate row via a second POST.
 async function saveAnalysis(silent=false){
+  const prior=_saveInFlight||Promise.resolve();
+  const thisSave=prior.catch(()=>{}).then(()=>_doSaveAnalysis(silent));
+  _saveInFlight=thisSave;
+  try{
+    await thisSave;
+  } finally {
+    if(_saveInFlight===thisSave)_saveInFlight=null;
+  }
+}
+
+async function _doSaveAnalysis(silent=false){
   const m=getMeta();
   const btn=document.getElementById('save-btn');
   if(!silent){btn.textContent='Saving...';btn.disabled=true;}
