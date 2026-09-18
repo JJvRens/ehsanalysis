@@ -1888,7 +1888,7 @@ async function renderAdmin(){
     if(total===0||captured===0)return{code:'empty',colour:'#e53935',bg:'#ffeaea',border:'#f5c6c6',dot:'🔴',label:'No marks',canPrint:false,pct,captured,total,spipOk};
     if(pct<90)return{code:'busy',colour:'#e65100',bg:'#fff3e0',border:'#ffcc80',dot:'🟡',label:`${captured}/${total} done`,canPrint:'warn',msg:`Only ${captured} of ${total} learners captured (${pct}%)`,pct,captured,total,spipOk};
     if(!spipOk)return{code:'spip',colour:'#7b1fa2',bg:'#f3e5f5',border:'#ce93d8',dot:'🟠',label:'SPIP missing',canPrint:'warn',msg:'Marks complete but SPIP not filled in yet',pct,captured,total,spipOk};
-    if(controlled)return{code:'done',colour:'#2e7d32',bg:'#e8f5e9',border:'#a5d6a7',dot:'✅',label:'Printed',canPrint:true,pct,captured,total,spipOk};
+    if(controlled)return{code:'done',colour:'#2e7d32',bg:'#e8f5e9',border:'#a5d6a7',dot:'👍',label:'Printed',canPrint:true,pct,captured,total,spipOk};
     return{code:'ready',colour:'#2e7d32',bg:'#e8f5e9',border:'#a5d6a7',dot:'🟢',label:'Ready',canPrint:true,pct,captured,total,spipOk};
   }
 
@@ -1971,7 +1971,7 @@ async function renderAdmin(){
         <div style="display:flex;justify-content:space-between;align-items:flex-start">
           <span style="font-size:15px;font-weight:700;color:#222">${a.task||'Untitled'}</span>
           <div style="text-align:right;flex-shrink:0;margin-left:6px">
-            <span style="font-size:20px" title="${s.label}">${s.dot}</span>
+            <span style="font-size:34px;line-height:1" title="${s.label}">${s.dot}</span>
             <div style="font-size:9px;color:#999;white-space:nowrap;font-weight:700">${a.created_at?new Date(a.created_at).toLocaleDateString('en-ZA'):''}</div>
           </div>
         </div>
