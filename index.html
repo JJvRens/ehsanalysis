@@ -220,6 +220,9 @@ tr.absent td{opacity:0.65;}
   .setup-grid{grid-template-columns:1fr;}
   .nav-tab{font-size:9px;padding:0 0.5rem;}
 }
+.att{font-size:10px;line-height:1.3;text-align:center;color:#9a9ab0;cursor:pointer;user-select:none}
+.att.on{color:#393768;font-weight:700}
+@media print{.att{display:none}}
 </style>
 </head>
 <body>
@@ -361,6 +364,7 @@ tr.absent td{opacity:0.65;}
     <button class="add-s-btn" onclick="addStudent()">+ Add learner manually</button>
     <button class="add-s-btn" onclick="clearAllStudents()" style="color:var(--red);border-color:#e8b4b4">✕ Clear all learners</button>
   </div>
+  <div class="no-print" style="font-size:11px;color:var(--ink3);margin-top:6px">A learner with all 0s shows <b>ABS</b> (absent). If a learner wrote and really scored 0, click their ABS badge to change it to a real 0. For an optional question, tick <b>☐ did this question</b> under the 0 if the learner attempted it and really scored 0. Leave it unticked if the learner skipped the question.</div>
 </div>
 
 <!-- ITEM ANALYSIS -->
@@ -414,7 +418,7 @@ function getTotal(m){return m.reduce((a,v)=>a+(Number(v)||0),0);}
 function getStudentMax(marks){
   return questions.reduce((a,q,i)=>{
     if(!q.optional)return a+Number(q.max);
-    if(Number(marks[i]||0)>0)return a+Number(q.max);
+    if(Number(marks[i])>0||marks[i]==='0')return a+Number(q.max);
     return a;
   },0);
 }
@@ -429,7 +433,41 @@ function getLevel(p){
   if(p<90)return{l:7,cls:'l7',label:'L7'};
   return{l:8,cls:'l8',label:'L8'};
 }
-function isAbsent(m){return m.every(v=>(Number(v)||0)===0);}
+// A learner is absent when every mark is 0, unless the teacher confirmed that
+// the learner wrote and really scored 0 (wrote0). Accepts a learner or a marks array.
+function isAbsent(x){const m=Array.isArray(x)?x:x.marks;return m.every(v=>(Number(v)||0)===0)&&!m.some(v=>v==='0')&&!(x&&x.wrote0);}
+function lvlBadge(si,ab,lv){
+  const s=students[si];
+  const allZero=s.marks.every(v=>(Number(v)||0)===0);
+  if(ab)return`<span class="lb ${lv.cls}" style="cursor:pointer" title="Absent. Click here if the learner wrote and really scored 0." onclick="toggleWroteZero(${si})">ABS</span>`;
+  if(allZero&&s.wrote0)return`<span class="lb ${lv.cls}" style="cursor:pointer" title="Wrote and scored 0. Click to mark absent again." onclick="toggleWroteZero(${si})">${lv.label}</span>`;
+  return`<span class="lb ${lv.cls}">${lv.label}</span>`;
+}
+// Optional questions: small chip under a 0 to say "attempted, really scored 0"
+function attBtn(si,qi){
+  const v=students[si].marks[qi];
+  if(v==='0')return`<div class="att on" onclick="toggleAttempt(${si},${qi})" title="The learner attempted this question and scored 0. Click to undo.">☑ did this question</div>`;
+  if(Number(v)||0)return'';
+  return`<div class="att" onclick="toggleAttempt(${si},${qi})" title="Tick this if the learner attempted this question and really scored 0 (left unticked = question not attempted)">☐ did this question</div>`;
+}
+function refreshAtt(si,qi){
+  if(!questions[qi]||!questions[qi].optional)return;
+  const inp=document.querySelectorAll(`#row-${si} input.mi`)[qi];
+  if(!inp)return;
+  const td=inp.parentNode;
+  const old=td.querySelector('.att');if(old)old.remove();
+  td.insertAdjacentHTML('beforeend',attBtn(si,qi));
+}
+function toggleAttempt(si,qi){
+  window._spipRendered=false;window._fnRendered=false;
+  if(!_autoSaveEnabled)_autoSaveEnabled=true;
+  updateMark(si,qi,0,students[si].marks[qi]!=='0');
+}
+function toggleWroteZero(si){
+  const s=students[si];
+  s.wrote0=!s.wrote0;
+  updateMark(si,0,s.marks[0]??0);
+}
 
 // ── SA-SAMS mark conversion ─────────────────────────────────────────────────
 // Converts a learner's total to the total required by SA-SAMS.
@@ -440,8 +478,8 @@ function getSasamsTotal(){
   const v=Number(document.getElementById('f-sasams')?.value);
   return (v&&v>0)?v:null;
 }
-function getSasamsMark(marks){
-  if(isAbsent(marks))return 'A';
+function getSasamsMark(marks,stu){
+  if(isAbsent(stu||marks))return 'A';
   const sasamsMax=getSasamsTotal();
   const learnerMax=getStudentMax(marks)||getMax();
   const tot=getTotal(marks);
@@ -490,16 +528,16 @@ function renderTable(){
     <th style="font-size:12px;font-weight:700">Lvl</th>
     <th style="width:28px;font-size:12px;font-weight:700"></th></tr>`;
   document.getElementById('mark-tbody').innerHTML=students.map((s,si)=>{
-    const tot=getTotal(s.marks),pct=getPct(s.marks),lv=getLevel(pct),ab=isAbsent(s.marks);
+    const tot=getTotal(s.marks),pct=getPct(s.marks),lv=getLevel(pct),ab=isAbsent(s);
     const learnerMax=getStudentMax(s.marks);
     return`<tr id="row-${si}" class="${ab?'absent':''}">
       <td style="color:var(--ink2);font-family:var(--mono);font-size:10px">${si+1}</td>
       <td class="nc"><input class="ni" value="${s.name}" oninput="students[${si}].name=this.value;window._spipRendered=false;window._fnRendered=false;"/></td>
-      ${questions.map((q,qi)=>`<td><input class="mi" type="number" min="0" max="${q.max}" value="${s.marks[qi]??0}" onfocus="markCellFocus(this)" onblur="markCellBlur(${si},${qi},this)" onchange="updateMark(${si},${qi},this.value)" onkeydown="navigateMark(event,${si},${qi})"/></td>`).join('')}
+      ${questions.map((q,qi)=>`<td><input class="mi" type="number" min="0" max="${q.max}" value="${s.marks[qi]??0}" onfocus="markCellFocus(this)" onblur="markCellBlur(${si},${qi},this)" onchange="updateMark(${si},${qi},this.value)" onkeydown="navigateMark(event,${si},${qi})"/>${q.optional?attBtn(si,qi):''}</td>`).join('')}
       <td id="tot-${si}" class="tc" style="background:${ab?'':'#fffff0'}">${ab?'—':tot}</td>
       <td id="pct-${si}" class="pc" style="background:${ab?'':'#fffff0'};color:${ab?'inherit':'#393768'};font-weight:600">${ab?'—':pct+'%'}</td>
-      <td id="sas-${si}" class="tc" style="background:#f5f0ff;color:#393768;font-weight:700">${getSasamsMark(s.marks)}</td>
-      <td id="lvl-${si}"><span class="lb ${lv.cls}">${ab?'ABS':lv.label}</span></td>
+      <td id="sas-${si}" class="tc" style="background:#f5f0ff;color:#393768;font-weight:700">${getSasamsMark(s.marks,s)}</td>
+      <td id="lvl-${si}">${lvlBadge(si,ab,lv)}</td>
       <td style="text-align:center;padding:2px;border-bottom:1px solid var(--paper3)"><button onclick="deleteStudent(${si})" style="background:none;border:none;color:#c0392b;cursor:pointer;font-size:14px;font-weight:700;padding:2px 5px;border-radius:3px;line-height:1" title="Remove learner">✕</button></td></tr>\``;
   }).join('');
 }
@@ -513,12 +551,12 @@ function markCellFocus(input){
 function markCellBlur(si,qi,input){
   if(input.value===''||input.value==null){
     input.value=0;
-    updateMark(si,qi,0);
+    updateMark(si,qi,0,students[si].marks[qi]==='0');
   }
 }
 
 // Update only the affected row's summary cells — no full re-render so focus is never lost
-function updateMark(si,qi,val){
+function updateMark(si,qi,val,attempted){
   window._spipRendered=false;
   window._fnRendered=false;
   let v=Number(val)||0;
@@ -531,10 +569,13 @@ function updateMark(si,qi,val){
   // Clamp input visually too
   const inputs=document.querySelectorAll(`#row-${si} input.mi`);
   if(inputs[qi])inputs[qi].value=v;
-  students[si].marks[qi]=v;
+  if(attempted===undefined)attempted=(students[si].marks[qi]==='0'); // keep an existing flag
+  students[si].marks[qi]=(v===0&&attempted)?'0':v;
+  if(v>0)students[si].wrote0=false;
+  refreshAtt(si,qi);
   // Recalc just this row
   const marks=students[si].marks;
-  const tot=getTotal(marks),pct=getPct(marks),lv=getLevel(pct),ab=isAbsent(marks);
+  const tot=getTotal(marks),pct=getPct(marks),lv=getLevel(pct),ab=isAbsent(students[si]);
   const totEl=document.getElementById(`tot-${si}`);
   const pctEl=document.getElementById(`pct-${si}`);
   const lvlEl=document.getElementById(`lvl-${si}`);
@@ -542,8 +583,8 @@ function updateMark(si,qi,val){
   const rowEl=document.getElementById(`row-${si}`);
   if(totEl)totEl.textContent=ab?'—':tot;
   if(pctEl){pctEl.textContent=ab?'—':pct+'%';pctEl.style.color=ab?'inherit':'#393768';}
-  if(sasEl)sasEl.textContent=getSasamsMark(marks);
-  if(lvlEl)lvlEl.innerHTML=`<span class="lb ${lv.cls}">${ab?'ABS':lv.label}</span>`;
+  if(sasEl)sasEl.textContent=getSasamsMark(marks,students[si]);
+  if(lvlEl)lvlEl.innerHTML=lvlBadge(si,ab,lv);
   if(rowEl)rowEl.className=ab?'absent':'';
 }
 
@@ -590,9 +631,9 @@ function deleteStudent(si){
 function renderSummary(){
   try{
   const mx=getMax();
-  const real=students.filter(s=>s.name.trim()&&!isAbsent(s.marks));
+  const real=students.filter(s=>s.name.trim()&&!isAbsent(s));
   const written=real;
-  const absent=students.filter(s=>s.name.trim()&&isAbsent(s.marks)).length;
+  const absent=students.filter(s=>s.name.trim()&&isAbsent(s)).length;
   const pcts=written.map(s=>getPct(s.marks));
   const classAvg=written.length?Math.round(pcts.reduce((a,b)=>a+b,0)/written.length):0;
   const lvlCounts=[0,0,0,0,0,0,0,0];
@@ -600,7 +641,7 @@ function renderSummary(){
   const qAvgs=questions.map((q,qi)=>{
     // For optional questions: only average learners who actually attempted it
     const attempted=q.optional
-      ? written.filter(s=>(Number(s.marks[qi])||0)>0)
+      ? written.filter(s=>(Number(s.marks[qi])||0)>0||s.marks[qi]==='0')
       : written;
     const vals=attempted.map(s=>Number(s.marks[qi])||0);
     const a=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:0;
@@ -888,14 +929,14 @@ function renderSummary(){
 // ── SPIP ───────────────────────────────────────────────────────────────────
 function renderSpip(){
   const m=getMeta();
-  const written=students.filter(s=>s.name.trim()&&!isAbsent(s.marks));
+  const written=students.filter(s=>s.name.trim()&&!isAbsent(s));
   const qStats=questions.map((q,qi)=>{
     const vals=written.map(s=>Number(s.marks[qi])||0);
     const a=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:0;
     return{q,qi,avg:Math.round(a*10)/10,pct:q.max?Math.round(a/q.max*100):0};
   });
   const weakest=[...qStats].sort((a,b)=>a.pct-b.pct).slice(0,2);
-  const atRiskCount=students.filter(s=>s.name.trim()&&!isAbsent(s.marks)&&getPct(s.marks)<50&&getPct(s.marks)>0).length;
+  const atRiskCount=students.filter(s=>s.name.trim()&&!isAbsent(s)&&getPct(s.marks)<50&&getPct(s.marks)>0).length;
 
   // Store data by index so onclick doesn't pass strings with special chars
   weakest.forEach((item,i)=>{
@@ -1056,7 +1097,7 @@ function renderFortnightly(){
   const m=getMeta();
   const streamCodes={BCM:'1',Sciences:'2',Languages:'3',Humanities:'4',Technical:'5'};
   const sc=streamCodes[m.stream]||'1';
-  const real=students.filter(s=>s.name.trim()&&!isAbsent(s.marks));
+  const real=students.filter(s=>s.name.trim()&&!isAbsent(s));
   const subj=getSubjectAbbr(m.subject);
   const lvlR=[
     {label:'L1',sub:'0-29',min:0,max:29},{label:'L2',sub:'30-39',min:30,max:39},
@@ -1065,7 +1106,7 @@ function renderFortnightly(){
     {label:'L7',sub:'80-89',min:80,max:89},{label:'L8',sub:'90-100',min:90,max:100},
   ];
   const rows=real.map((s,i)=>{
-    const pct=getPct(s.marks),ab=isAbsent(s.marks);
+    const pct=getPct(s.marks),ab=isAbsent(s);
     const cols=lvlR.map(lr=>{
       let val='';
       if(ab&&lr.label==='L1')val='0';
@@ -1886,7 +1927,7 @@ async function renderAdmin(){
     let ss=[];try{ss=JSON.parse(a.students);}catch{}
     let sp={};try{sp=JSON.parse(a.spip_data||'{}');}catch{}
     const total=ss.filter(s=>s.name&&s.name.trim()).length;
-    const captured=ss.filter(s=>s.name&&s.name.trim()&&!s.marks.every(m=>(Number(m)||0)===0)).length;
+    const captured=ss.filter(s=>s.name&&s.name.trim()&&(s.wrote0||s.marks.some(m=>m==='0')||!s.marks.every(m=>(Number(m)||0)===0))).length;
     const spipOk=sp['spip-challenges-0']&&sp['spip-challenges-0'].trim().length>0;
     const pct=total?Math.round(captured/total*100):0;
     const controlled=!!a.fortnightly_printed_at;
@@ -2062,13 +2103,13 @@ function printAdminFortnightly(analysisId){
     // Use student-specific max for optional questions
     const smx=qs.reduce((t,q,i)=>{
       if(!q.optional)return t+Number(q.max);
-      if(Number(marks[i]||0)>0)return t+Number(q.max);
+      if(Number(marks[i])>0||marks[i]==='0')return t+Number(q.max);
       return t;
     },0)||mx;
     return smx?Math.round(marks.reduce((a,v)=>a+(Number(v)||0),0)/smx*100):0;
   }
-  function isAbsentA(marks){return marks.every(v=>(Number(v)||0)===0);}
-  const real=ss.filter(s=>s.name&&!isAbsentA(s.marks));
+  function isAbsentA(x){const m=Array.isArray(x)?x:x.marks;return m.every(v=>(Number(v)||0)===0)&&!m.some(v=>v==='0')&&!(x&&x.wrote0);}
+  const real=ss.filter(s=>s.name&&!isAbsentA(s));
   const subj=getSubjectAbbr(a.subject||a.profiles?.subject||'');
   const school=a.profiles?.school||'Evander High School';
   const educator=a.profiles?.full_name||'';
@@ -2198,13 +2239,13 @@ function printFortnightlyWithStamp(analysisId){
   function getPctA(marks){
     const smx=qs.reduce((t,q,i)=>{
       if(!q.optional)return t+Number(q.max);
-      if(Number(marks[i]||0)>0)return t+Number(q.max);
+      if(Number(marks[i])>0||marks[i]==='0')return t+Number(q.max);
       return t;
     },0)||mx;
     return smx?Math.round(marks.reduce((a,v)=>a+(Number(v)||0),0)/smx*100):0;
   }
-  function isAbsentA(marks){return marks.every(v=>(Number(v)||0)===0);}
-  const real=ss.filter(s=>s.name&&!isAbsentA(s.marks));
+  function isAbsentA(x){const m=Array.isArray(x)?x:x.marks;return m.every(v=>(Number(v)||0)===0)&&!m.some(v=>v==='0')&&!(x&&x.wrote0);}
+  const real=ss.filter(s=>s.name&&!isAbsentA(s));
   const subj=getSubjectAbbr(a.subject||a.profiles?.subject||'');
   const school=a.profiles?.school||'Evander High School';
   const educator=a.profiles?.full_name||'';
@@ -2482,14 +2523,14 @@ async function printAdminSpip(analysisId){
   function getPctA(marks){
     const smx=qs.reduce((t,q,i)=>{
       if(!q.optional)return t+Number(q.max);
-      if(Number(marks[i]||0)>0)return t+Number(q.max);
+      if(Number(marks[i])>0||marks[i]==='0')return t+Number(q.max);
       return t;
     },0)||mx;
     return smx?Math.round(marks.reduce((a,v)=>a+(Number(v)||0),0)/smx*100):0;
   }
-  function isAbsentA(marks){return marks.every(v=>(Number(v)||0)===0);}
+  function isAbsentA(x){const m=Array.isArray(x)?x:x.marks;return m.every(v=>(Number(v)||0)===0)&&!m.some(v=>v==='0')&&!(x&&x.wrote0);}
 
-  const written=ss.filter(s=>s.name&&s.name.trim()&&!isAbsentA(s.marks));
+  const written=ss.filter(s=>s.name&&s.name.trim()&&!isAbsentA(s));
   const atRiskCount=written.filter(s=>getPctA(s.marks)<50&&getPctA(s.marks)>0).length;
 
   const qStats=qs.map((q,qi)=>{
@@ -2704,9 +2745,9 @@ async function printAdminSpipWithStamp(analysisId){
   const subject=a.subject||a.profiles?.subject||'';
   const task=a.task||'',date=a.date||'',grade=a.grade||a.profiles?.grade||'';
   const school=a.profiles?.school||'Evander High School',target=a.target||50;
-  function getPctA(marks){const smx=qs.reduce((t,q,i)=>{if(!q.optional)return t+Number(q.max);if(Number(marks[i]||0)>0)return t+Number(q.max);return t;},0)||mx;return smx?Math.round(marks.reduce((a,v)=>a+(Number(v)||0),0)/smx*100):0;}
-  function isAbsentA(marks){return marks.every(v=>(Number(v)||0)===0);}
-  const written=ss.filter(s=>s.name&&s.name.trim()&&!isAbsentA(s.marks));
+  function getPctA(marks){const smx=qs.reduce((t,q,i)=>{if(!q.optional)return t+Number(q.max);if(Number(marks[i])>0||marks[i]==='0')return t+Number(q.max);return t;},0)||mx;return smx?Math.round(marks.reduce((a,v)=>a+(Number(v)||0),0)/smx*100):0;}
+  function isAbsentA(x){const m=Array.isArray(x)?x:x.marks;return m.every(v=>(Number(v)||0)===0)&&!m.some(v=>v==='0')&&!(x&&x.wrote0);}
+  const written=ss.filter(s=>s.name&&s.name.trim()&&!isAbsentA(s));
   const qStats=qs.map((q,qi)=>{const vals=written.map(s=>Number(s.marks[qi])||0);const avg=vals.length?vals.reduce((a,b)=>a+b,0)/vals.length:0;return{q,qi,avg:Math.round(avg*10)/10,pct:q.max?Math.round(avg/q.max*100):0};});
   const weakest=[...qStats].sort((a,b)=>a.pct-b.pct).slice(0,2);
   const headers=[{t:'No.',w:'22px',rotate:false},{t:'CHALLENGING TOPIC',w:'90px',rotate:true},{t:'SPECIFY THE EXACT CHALLENGES',w:'85px',rotate:true},{t:'TARGETED GROUP',w:'75px',rotate:true},{t:'INTERVENTION STRATEGY / ACTIVITY',w:'100px',rotate:true},{t:'PERFORMANCE INDICATOR',w:'75px',rotate:true},{t:'RESPONSIBILITY',w:'75px',rotate:true},{t:'TIMELINES',w:'65px',rotate:true},{t:'PROGRESS BY THE TEACHER',w:'65px',rotate:true},{t:'MONITORING By DH/DP/Principal',w:'65px',rotate:true}];
@@ -2769,10 +2810,10 @@ function showAdminDetail(analysisId){
     if(p<70)return{l:5,cls:'l5',label:'L5'};if(p<80)return{l:6,cls:'l6',label:'L6'};
     if(p<90)return{l:7,cls:'l7',label:'L7'};return{l:8,cls:'l8',label:'L8'};
   }
-  function isAbsentA(marks){return marks.every(v=>(Number(v)||0)===0);}
+  function isAbsentA(x){const m=Array.isArray(x)?x:x.marks;return m.every(v=>(Number(v)||0)===0)&&!m.some(v=>v==='0')&&!(x&&x.wrote0);}
 
   const real=ss.filter(s=>s.name);
-  const written=real.filter(s=>!isAbsentA(s.marks));
+  const written=real.filter(s=>!isAbsentA(s));
   const pcts=written.map(s=>getPctA(s.marks));
   const avg=pcts.length?Math.round(pcts.reduce((a,b)=>a+b,0)/pcts.length):0;
   const passing=pcts.filter(p=>p>=50).length;
@@ -2880,7 +2921,7 @@ function showAdminDetail(analysisId){
               const tot=s.marks.reduce((a,v)=>a+(Number(v)||0),0);
               const pct=getPctA(s.marks);
               const lv=getLevelA(pct);
-              const ab=isAbsentA(s.marks);
+              const ab=isAbsentA(s);
               return`<tr style="background:${i%2===0?'white':'#f8fcf5'}${ab?';opacity:0.4':''}">
                 <td style="border:1px solid var(--paper3);padding:3px 8px;color:var(--ink3)">${i+1}</td>
                 <td style="border:1px solid var(--paper3);padding:3px 8px">${s.name}</td>
@@ -3018,7 +3059,7 @@ function printSasamsList(){
   // Only learners with a name; sort A-Z (surname first by convention)
   const rows=students
     .filter(s=>s.name&&s.name.trim())
-    .map(s=>({name:s.name.trim(),mark:getSasamsMark(s.marks)}))
+    .map(s=>({name:s.name.trim(),mark:getSasamsMark(s.marks,s)}))
     .sort((a,b)=>a.name.localeCompare(b.name,'en',{sensitivity:'base'}));
 
   if(rows.length===0){
